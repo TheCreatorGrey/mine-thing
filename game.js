@@ -85,7 +85,7 @@ function generateChunk(xLocation, zLocation, size=8, height=20) {
                 if (y < noiseval) {
                     blockType = 'dirt'
                 }
-                if (y < noiseval - 5) {
+                if (y < noiseval - (height/3)) {
                     blockType = 'stone';
 
                     if (randInt(30) === 0) {
