@@ -1,3 +1,5 @@
+**ITS NOT DONE YET**
+
 A very basic Minecraft clone (the name doesn't have "craft" in it because I was too lazy to add crafting).
 
 DISCLAIMER: I went into this project with no idea how to use Three.JS, so some of the 
