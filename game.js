@@ -24,15 +24,27 @@ window.onkeydown = function(e) { pressedKeys[e.key] = true; }
 camera.position.z = 5;
 
 
-const blockIndex = ['dirt', 'grass', 'stone', 'bedrock', 'coal-ore', 'iron-ore', 'gold-ore', 'diamond-ore', 'ruby-ore', 'sapphire-ore']
+//light thingy
+sun = new THREE.DirectionalLight( 0xffffff );
+sun.position.set( 400, 400, 400 );
+soft = new THREE.DirectionalLight( 0x939393 );
+soft.position.set( -400, 400, -400 );
+neath = new THREE.DirectionalLight( 0x5f5f5f );
+neath.position.set( 0, -400, 0 );
+scene.add(sun);
+scene.add(soft);
+scene.add(neath);
+
+
+const blockIndex = ['dirt', 'grass', 'stone', 'bedrock', 'coal-ore', 'iron-ore', 'gold-ore', 'diamond-ore', 'ruby-ore', 'sapphire-ore', 'planks', 'log', 'brick', 'stone-brick']
 const textureLoader = new THREE.TextureLoader();
 function loadBlockTexture(name) {
     const texture = textureLoader.load(`https://raw.githubusercontent.com/Spiceinajar/mine-thing/main/assets/textures/${name}.png`);
-    texture.generateMipmaps = false;
-    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.NearestFilter;
+    texture.minFilter = THREE.NearestFilter;
     texture.needsUpdate = true;
 
-    const material = new THREE.MeshBasicMaterial({ map: texture });
+    const material = new THREE.MeshLambertMaterial({ map: texture});
 
     return material
 }
@@ -168,8 +180,8 @@ async function loadChunk(chunk) {
 }
 
 
-for (var x = 0; x < 4; x++) {
-    for (var z = 0; z < 4; z++) {
+for (var x = 0; x < 2; x++) {
+    for (var z = 0; z < 2; z++) {
         loadChunk(generateChunk(x, z, 8, 10))
     }
 }
@@ -200,7 +212,8 @@ renderer.domElement.onmousedown = async function(e) {
             case 3:
                 newBlock(intersectPoint.x,
                     intersectPoint.y,
-                    intersectPoint.z)
+                    intersectPoint.z,
+                    'stone-brick')
                 break;
           }
     }
@@ -217,6 +230,7 @@ function cast(origin, direction, length) {
 
     return raycaster.intersectObjects(scene.children);
 }
+
 
 //epic loop
 function animate() {
@@ -278,7 +292,7 @@ function animate() {
 
 
 
-    //foor raycast (makes sure the player can't go through the floor)
+    //floor raycast (makes sure the player can't go through the floor)
     if (cast(camera.position, new THREE.Vector3(0, -1, 0), 2).length === 0) {
         //var intersectPoint = intersects[0].point;
 
@@ -298,7 +312,6 @@ function animate() {
             playerYVelocity = 0;
         }
     }
-
 
 
 
