@@ -11,9 +11,7 @@ Three.JS / JavaScript, So I will not post updates very often (If I do at all, th
 
 
 CREDITS:
-- Me lol
-- Caffiene
 - OpenAI, I guess
-- Josephg for his EBIC perlin noise library
+- Josephg for his perlin noise library
 - www.piskelapp.com (I made the textures there)
-- Obvs I used Three.JS
+- 3D graphics made using Three.JS
