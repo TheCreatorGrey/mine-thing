@@ -1,6 +1,6 @@
-// initializes threejs and allat goofy stuff
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+const textureLoader = new THREE.TextureLoader();
 
 const renderer = new THREE.WebGLRenderer({
     antialias: false,
@@ -115,19 +115,26 @@ const TREE = [
 ]
 
 
-const blockIndex = ['dirt', 'grass', 'stone', 'bedrock', 'coal-ore', 'iron-ore', 'gold-ore', 'diamond-ore', 'ruby-ore', 'sapphire-ore', 'planks', 'log', 'brick', 'stone-brick']
-const textureLoader = new THREE.TextureLoader();
-function loadBlockTexture(name) {
-    const texture = textureLoader.load(`https://raw.githubusercontent.com/Spiceinajar/mine-thing/main/assets/textures/${name}.png`);
-    texture.magFilter = THREE.NearestFilter;
-    texture.minFilter = THREE.NearestFilter;
-    texture.needsUpdate = true;
+//const blockIndex = ['dirt', 'grass', 'stone', 'bedrock', 'coal-ore', 'iron-ore', 'gold-ore', 'diamond-ore', 'ruby-ore', 'sapphire-ore', 'planks', 'log', 'brick', 'stone-brick']
+//function loadBlockTexture(name) {
+//    const texture = textureLoader.load(`https://raw.githubusercontent.com/Spiceinajar/mine-thing/main/assets/textures/${name}.png`);
+//    texture.magFilter = THREE.NearestFilter;
+//    texture.minFilter = THREE.NearestFilter;
+//    texture.needsUpdate = true;
+//
+//    const material = new THREE.MeshBasicMaterial({ map: texture});
+//    //material.side = THREE.DoubleSide;
+//
+//    return material
+//}
+//
+//textures = {}
+//for (var t in blockIndex) {
+//    let tex = blockIndex[t];
+//
+//    textures[tex] = loadBlockTexture(tex);
+//}
 
-    const material = new THREE.MeshBasicMaterial({ map: texture});
-    //material.side = THREE.DoubleSide;
-
-    return material
-}
 
 const texture = textureLoader.load(`https://media.discordapp.net/attachments/1043652794374160385/1149405236193148988/tile.png`);
 texture.magFilter = THREE.NearestFilter;
@@ -137,24 +144,15 @@ texture.needsUpdate = true;
 const blocktex = new THREE.MeshBasicMaterial({ map: texture});
 
 
-textures = {}
-for (var t in blockIndex) {
-    let tex = blockIndex[t];
-
-    textures[tex] = loadBlockTexture(tex);
-}
-
 function playSound(url) {
     let aud = new Audio(url);
     aud.play();
 }
 
-//you know what this does
 function randInt(max) {
     return Math.floor(Math.random()*max)
 }
 
-//generates a chunk
 defaultChunkSize = 16;
 var generatedChunks = {};
 function generateChunk(xLocation, zLocation, size=defaultChunkSize, height=32) {
@@ -255,7 +253,6 @@ const colors = {
 }
 
 var renderedChunks = {};
-//takes a chunk and adds it to the scene
 async function loadChunk(chunk) {
     if (renderedChunks[`${chunk.x}/${chunk.z}`]) {
         scene.remove(renderedChunks[`${chunk.x}/${chunk.z}`]);
@@ -314,7 +311,6 @@ async function loadChunk(chunk) {
     renderedChunks[`${chunk.x}/${chunk.z}`] = chunkGeom;
 }
 
-//places or erases blocks when you click your mouse
 renderer.domElement.onmousedown = async function(e) {
     const raycaster = new THREE.Raycaster();
     const direction = new THREE.Vector3();
@@ -347,7 +343,6 @@ renderer.domElement.onmousedown = async function(e) {
 
                 point.x -=  chunkx*defaultChunkSize;
                 point.z -=  chunkz*defaultChunkSize;
-
 
                 generatedChunks[`${chunkx}/${chunkz}`].blocks[Math.round(point.x)][Math.round(point.y)][Math.round(point.z)] = null;
                 loadChunk(generatedChunks[`${chunkx}/${chunkz}`])
@@ -512,5 +507,3 @@ function animate() {
     renderer.render(scene, camera);
 }
 animate();
-
-//im not gonna label this entire thing bro im too lazy
