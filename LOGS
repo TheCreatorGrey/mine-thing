@@ -3,3 +3,16 @@ added shading
 fixed texture blurriness
 added 4 new blocks
 added crosshair
+
+
+update 2:
+fixed player height
+fixed jumping
+significantly improved performance (that isn't to say its not still terrible)
+added automatic chunk loading and unloading
+chunks now reload upon modification
+added trees
+improved terrain generation
+some new blocks
+I removed the shading for performance reasons
+fixed delta time

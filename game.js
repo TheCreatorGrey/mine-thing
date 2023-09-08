@@ -1,6 +1,6 @@
 // initializes threejs and allat goofy stuff
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
 
 const renderer = new THREE.WebGLRenderer({
     antialias: false,
@@ -21,19 +21,98 @@ var pressedKeys = {};
 window.onkeyup = function(e) { pressedKeys[e.key] = false; }
 window.onkeydown = function(e) { pressedKeys[e.key] = true; }
 
-camera.position.z = 5;
-
 
 //light thingy
-sun = new THREE.DirectionalLight( 0xffffff );
-sun.position.set( 400, 400, 400 );
-soft = new THREE.DirectionalLight( 0x939393 );
-soft.position.set( -400, 400, -400 );
-neath = new THREE.DirectionalLight( 0x5f5f5f );
-neath.position.set( 0, -400, 0 );
-scene.add(sun);
-scene.add(soft);
-scene.add(neath);
+//sun = new THREE.DirectionalLight( 0xffffff );
+//sun.position.set( 400, 400, 400 );
+//soft = new THREE.DirectionalLight( 0x939393 );
+//soft.position.set( -400, 400, -400 );
+//neath = new THREE.DirectionalLight( 0x5f5f5f );
+//neath.position.set( 0, -400, 0 );
+//scene.add(sun);
+//scene.add(soft);
+//scene.add(neath);
+
+
+const TREE = [
+    //log
+    {x:0, y:0, z:0, type:'log'},
+    {x:0, y:1, z:0, type:'log'},
+    {x:0, y:2, z:0, type:'log'},
+    {x:0, y:3, z:0, type:'log'},
+    {x:0, y:4, z:0, type:'log'},
+    {x:0, y:5, z:0, type:'log'},
+
+    //upper tuft
+    {x:0, y:6, z:0, type:'leaves'},
+    {x:0, y:6, z:1, type:'leaves'},
+    {x:0, y:6, z:-1, type:'leaves'},
+    {x:1, y:6, z:0, type:'leaves'},
+    {x:-1, y:6, z:0, type:'leaves'},
+
+    //lower tuft
+    {x:0, y:5, z:1, type:'leaves'},
+    {x:0, y:5, z:-1, type:'leaves'},
+    {x:1, y:5, z:0, type:'leaves'},
+    {x:-1, y:5, z:0, type:'leaves'},
+    {x:1, y:5, z:1, type:'leaves'},
+    {x:-1, y:5, z:-1, type:'leaves'},
+    {x:-1, y:5, z:1, type:'leaves'},
+    {x:1, y:5, z:-1, type:'leaves'},
+
+
+    //upper bulk layer
+    {x:0, y:4, z:1, type:'leaves'},
+    {x:0, y:4, z:-1, type:'leaves'},
+    {x:1, y:4, z:0, type:'leaves'},
+    {x:-1, y:4, z:0, type:'leaves'},
+    {x:1, y:4, z:1, type:'leaves'},
+    {x:-1, y:4, z:-1, type:'leaves'},
+    {x:-1, y:4, z:1, type:'leaves'},
+    {x:1, y:4, z:-1, type:'leaves'},
+    {x:2, y:4, z:-2, type:'leaves'},
+    {x:-2, y:4, z:2, type:'leaves'},
+    {x:2, y:4, z:2, type:'leaves'},
+    {x:-2, y:4, z:-2, type:'leaves'},
+    {x:1, y:4, z:-2, type:'leaves'},
+    {x:0, y:4, z:-2, type:'leaves'},
+    {x:-1, y:4, z:-2, type:'leaves'},
+    {x:1, y:4, z:2, type:'leaves'},
+    {x:0, y:4, z:2, type:'leaves'},
+    {x:-1, y:4, z:2, type:'leaves'},
+    {x:2, y:4, z:1, type:'leaves'},
+    {x:2, y:4, z:0, type:'leaves'},
+    {x:2, y:4, z:-1, type:'leaves'},
+    {x:-2, y:4, z:1, type:'leaves'},
+    {x:-2, y:4, z:0, type:'leaves'},
+    {x:-2, y:4, z:-1, type:'leaves'},
+
+    //lower bulk layer
+    {x:0, y:3, z:1, type:'leaves'},
+    {x:0, y:3, z:-1, type:'leaves'},
+    {x:1, y:3, z:0, type:'leaves'},
+    {x:-1, y:3, z:0, type:'leaves'},
+    {x:1, y:3, z:1, type:'leaves'},
+    {x:-1, y:3, z:-1, type:'leaves'},
+    {x:-1, y:3, z:1, type:'leaves'},
+    {x:1, y:3, z:-1, type:'leaves'},
+    {x:2, y:3, z:-2, type:'leaves'},
+    {x:-2, y:3, z:2, type:'leaves'},
+    {x:2, y:3, z:2, type:'leaves'},
+    {x:-2, y:3, z:-2, type:'leaves'},
+    {x:1, y:3, z:-2, type:'leaves'},
+    {x:0, y:3, z:-2, type:'leaves'},
+    {x:-1, y:3, z:-2, type:'leaves'},
+    {x:1, y:3, z:2, type:'leaves'},
+    {x:0, y:3, z:2, type:'leaves'},
+    {x:-1, y:3, z:2, type:'leaves'},
+    {x:2, y:3, z:1, type:'leaves'},
+    {x:2, y:3, z:0, type:'leaves'},
+    {x:2, y:3, z:-1, type:'leaves'},
+    {x:-2, y:3, z:1, type:'leaves'},
+    {x:-2, y:3, z:0, type:'leaves'},
+    {x:-2, y:3, z:-1, type:'leaves'},
+]
 
 
 const blockIndex = ['dirt', 'grass', 'stone', 'bedrock', 'coal-ore', 'iron-ore', 'gold-ore', 'diamond-ore', 'ruby-ore', 'sapphire-ore', 'planks', 'log', 'brick', 'stone-brick']
@@ -44,10 +123,18 @@ function loadBlockTexture(name) {
     texture.minFilter = THREE.NearestFilter;
     texture.needsUpdate = true;
 
-    const material = new THREE.MeshLambertMaterial({ map: texture});
+    const material = new THREE.MeshBasicMaterial({ map: texture});
+    //material.side = THREE.DoubleSide;
 
     return material
 }
+
+const texture = textureLoader.load(`https://media.discordapp.net/attachments/1043652794374160385/1149405236193148988/tile.png`);
+texture.magFilter = THREE.NearestFilter;
+texture.minFilter = THREE.NearestFilter;
+texture.needsUpdate = true;
+
+const blocktex = new THREE.MeshBasicMaterial({ map: texture});
 
 
 textures = {}
@@ -57,17 +144,9 @@ for (var t in blockIndex) {
     textures[tex] = loadBlockTexture(tex);
 }
 
-//adds a block to the scene
-function newBlock(x, y, z, type='dirt') {
-    if (type) {
-        const geometry = new THREE.BoxGeometry();
-        const cube = new THREE.Mesh(geometry, textures[type]);
-        scene.add(cube);
-    
-        cube.position.x = Math.round(x);
-        cube.position.y = Math.round(y);
-        cube.position.z = Math.round(z);
-    }
+function playSound(url) {
+    let aud = new Audio(url);
+    aud.play();
 }
 
 //you know what this does
@@ -76,23 +155,32 @@ function randInt(max) {
 }
 
 //generates a chunk
+defaultChunkSize = 16;
 var generatedChunks = {};
-function generateChunk(xLocation, zLocation, size=8, height=20) {
+function generateChunk(xLocation, zLocation, size=defaultChunkSize, height=32) {
     xArray = [];
-    for (var x = 0; x < 8; x++) {
+    var bCount = 0;
+
+    let treePositions = [];
+
+    for (var x = 0; x < size; x++) {
         yArray = [];
         for (var y = 0; y < height; y++) {
             zArray = [];
-            for (var z = 0; z < 8; z++) {
+            for (var z = 0; z < size; z++) {
                 let globalX = x+(xLocation*size);
                 let globalZ = z+(zLocation*size);
 
-                let amp = 3;
-                let noiseval = Math.round(noise.perlin2(globalX/10, globalZ/10)*amp)+(height-(amp+1));
+                let amp = 15;
+                let noiseval = Math.round(noise.perlin2(globalX/50, globalZ/50)*amp)+(height/2);
 
                 var blockType = null;
                 if (y === noiseval) {
                     blockType = 'grass'
+                    if (randInt(60) === 0) {
+                        treePositions.push([x, y, z]);
+                    }
+
                 }
                 if (y < noiseval) {
                     blockType = 'dirt'
@@ -123,6 +211,10 @@ function generateChunk(xLocation, zLocation, size=8, height=20) {
                     blockType = 'bedrock'
                 }
 
+                if (blockType) {
+                    bCount += 1
+                }
+
                 zArray.push(blockType)
             }
             yArray.push(zArray)
@@ -130,24 +222,53 @@ function generateChunk(xLocation, zLocation, size=8, height=20) {
         xArray.push(yArray)
     }
 
+    for (let t in treePositions) {
+        let tr = treePositions[t];
+        for (let b in TREE) {
+            try {
+                let block = TREE[b];
+                xArray[block.x + tr[0]][block.y + tr[1]][block.z + tr[2]] = block.type
+            } catch {}
+        }
+    }
+
     generatedChunks[`${xLocation}/${zLocation}`] = {
         x:xLocation,
         z:zLocation,
         size:size,
         height:height,
-        blocks:xArray
+        blocks:xArray,
+        bCount:bCount
     }
 
     return generatedChunks[`${xLocation}/${zLocation}`];
 }
 
+const colors = {
+    'grass':new THREE.Color("rgb(0, 100, 0)"),
+    'dirt':new THREE.Color("rgb(60, 40, 0)"),
+    'stone':new THREE.Color("rgb(50, 50, 50)"),
+    'bedrock':new THREE.Color("rgb(20, 20, 20)"),
+    'leaves':new THREE.Color("rgb(0, 60, 0)"),
+    'log':new THREE.Color("rgb(40, 20, 0)"),
+    'planks':new THREE.Color("rgb(150, 140, 50)"),
+}
+
+var renderedChunks = {};
 //takes a chunk and adds it to the scene
 async function loadChunk(chunk) {
-    for (var x = 0; x < 8; x++) {
+    if (renderedChunks[`${chunk.x}/${chunk.z}`]) {
+        scene.remove(renderedChunks[`${chunk.x}/${chunk.z}`]);
+        renderedChunks[`${chunk.x}/${chunk.z}`].geometry.dispose();
+    }
+
+    const geometry = new THREE.BoxGeometry();
+    const chunkGeom = new THREE.InstancedMesh(geometry, blocktex, chunk.bCount);
+
+    var totalIter = 0;
+    for (var x = 0; x < chunk.size; x++) {
         for (var y = 0; y < chunk.height; y++) {
-            for (var z = 0; z < 8; z++) {
-                let globalX = x+(chunk.x*chunk.size);
-                let globalZ = z+(chunk.z*chunk.size);
+            for (var z = 0; z < chunk.size; z++) {
                 let bType = chunk.blocks[x][y][z];
 
                 let exposed = false;
@@ -171,22 +292,29 @@ async function loadChunk(chunk) {
                     exposed = true;
                 }
 
-                if (exposed) {
-                    newBlock(globalX, y-(chunk.height+1), globalZ, bType)
+                if (bType && exposed) {
+                    const matrix = new THREE.Matrix4();
+                    matrix.setPosition(x, y, z);
+                    chunkGeom.setMatrixAt(totalIter, matrix);
+
+                    if (colors[bType]) {
+                        chunkGeom.setColorAt(totalIter, colors[bType]);
+                    }
+                    
+                    totalIter += 1;
                 }
             }
         }
     }
+
+    scene.add(chunkGeom);
+    chunkGeom.position.x = chunk.x*chunk.size;
+    chunkGeom.position.z = chunk.z*chunk.size;
+
+    renderedChunks[`${chunk.x}/${chunk.z}`] = chunkGeom;
 }
 
-
-for (var x = 0; x < 2; x++) {
-    for (var z = 0; z < 2; z++) {
-        loadChunk(generateChunk(x, z, 8, 10))
-    }
-}
-
-//places or erases (hey that kinda rhymes) blocks when you click your mouse
+//places or erases blocks when you click your mouse
 renderer.domElement.onmousedown = async function(e) {
     const raycaster = new THREE.Raycaster();
     const direction = new THREE.Vector3();
@@ -197,31 +325,61 @@ renderer.domElement.onmousedown = async function(e) {
     const intersects = raycaster.intersectObjects(scene.children);
     
     if (intersects.length > 0) {
-        var intersectPoint = intersects[0].point;
+        var point = intersects[0].point;
         const normal = intersects[0].face.normal;
         const hit = intersects[0].object;
 
-        intersectPoint.x += normal.x*.99;
-        intersectPoint.y += normal.y*.99;
-        intersectPoint.z += normal.z*.99;
+        let chunkx;
+        let chunkz;
+
+        console.log(hit.position)
+
+        console.log(`${chunkx}/${chunkz}`);
 
         switch (e.which) {
             case 1:
-                scene.remove(hit);
+                point.x -= normal.x*.5;
+                point.y -= normal.y*.5;
+                point.z -= normal.z*.5;
+        
+                chunkx = hit.position.x/defaultChunkSize;
+                chunkz = hit.position.z/defaultChunkSize;
+
+                point.x -=  chunkx*defaultChunkSize;
+                point.z -=  chunkz*defaultChunkSize;
+
+
+                generatedChunks[`${chunkx}/${chunkz}`].blocks[Math.round(point.x)][Math.round(point.y)][Math.round(point.z)] = null;
+                loadChunk(generatedChunks[`${chunkx}/${chunkz}`])
+
+                playSound('./assets/break.ogg');
+
                 break;
             case 3:
-                newBlock(intersectPoint.x,
-                    intersectPoint.y,
-                    intersectPoint.z,
-                    'stone-brick')
+                point.x += normal.x*.99;
+                point.y += normal.y*.99;
+                point.z += normal.z*.99;
+        
+                chunkx = Math.floor(point.x/defaultChunkSize);
+                chunkz = Math.floor(point.z/defaultChunkSize);
+
+                point.x -=  chunkx*defaultChunkSize;
+                point.z -=  chunkz*defaultChunkSize;
+
+                generatedChunks[`${chunkx}/${chunkz}`].blocks[Math.round(point.x)][Math.round(point.y)][Math.round(point.z)] = 'planks';
+                loadChunk(generatedChunks[`${chunkx}/${chunkz}`])
+
+                playSound('./assets/place.ogg');
+
                 break;
           }
     }
 }
 
 var playerYVelocity = 0;
+camera.position.y = 50;
 
-//makes a raycast, obviously
+//makes a raycast
 function cast(origin, direction, length) {
     const raycaster = new THREE.Raycaster();
     raycaster.far = length;
@@ -233,29 +391,31 @@ function cast(origin, direction, length) {
 
 
 //epic loop
+var dt;
+var prevTime = 0;
 function animate() {
+    const currentTime = performance.now();
+    const dt = (currentTime - prevTime) / 1000;
+
     requestAnimationFrame(animate);
 
-    camera.position.y += playerYVelocity;
+    camera.position.y += playerYVelocity*dt;
 
     oldCamX = camera.position.x;
     oldCamY = camera.position.y;
     oldCamZ = camera.position.z;
 
     if (pressedKeys["w"]) {
-        camera.translateZ(-0.1)
+        camera.translateZ(-5*dt)
     }
     if (pressedKeys["s"]) {
-        camera.translateZ(0.1)
+        camera.translateZ(5*dt)
     }
     if (pressedKeys["a"]) {
-        camera.translateX(-0.1)
+        camera.translateX(-5*dt)
     }
     if (pressedKeys["d"]) {
-        camera.translateX(0.1)
-    }
-    if (pressedKeys[" "]) {
-        playerYVelocity += .1;
+        camera.translateX(5*dt)
     }
 
     //upper wall raycasts (make sure the player doesnt go through walls)
@@ -291,15 +451,20 @@ function animate() {
     }
 
 
-
     //floor raycast (makes sure the player can't go through the floor)
-    if (cast(camera.position, new THREE.Vector3(0, -1, 0), 2).length === 0) {
+    if (cast(camera.position, new THREE.Vector3(0, -1, 0), 1.5).length === 0) {
         //var intersectPoint = intersects[0].point;
 
-        if (playerYVelocity > -.3) {
-            playerYVelocity -= .05;
+        if (playerYVelocity > -10) {
+            playerYVelocity -= 1;
         }
     } else {
+        if (pressedKeys[" "]) {
+            if (playerYVelocity === 0) {
+                playerYVelocity = 8
+            }
+        }
+
         if (playerYVelocity < 0) {
             playerYVelocity = 0;
         }
@@ -307,13 +472,42 @@ function animate() {
 
 
     //head raycast (makes sure the player can't go through the ceiling)
-    if (cast(camera.position, new THREE.Vector3(0, 1, 0), 1).length > 0) {
+    if (cast(camera.position, new THREE.Vector3(0, 1, 0), .5).length > 0) {
         if (playerYVelocity > 0) {
             playerYVelocity = 0;
         }
     }
 
 
+
+    currentChunkX = Math.round(camera.position.x/defaultChunkSize);
+    currentChunkZ = Math.round(camera.position.z/defaultChunkSize);
+
+    surrounding = [[-1, -1], [-1, 0], [0, 0], [0, -1]];
+    for (let ch in surrounding) {
+        let chunkCoords = [surrounding[ch][0] + currentChunkX, surrounding[ch][1] + currentChunkZ];
+
+        if (! renderedChunks[`${chunkCoords[0]}/${chunkCoords[1]}`]) {
+            if (generatedChunks[`${chunkCoords[0]}/${chunkCoords[1]}`]) {
+                loadChunk(generatedChunks[`${chunkCoords[0]}/${chunkCoords[1]}`]);
+                
+            } else {
+                loadChunk(generateChunk(chunkCoords[0], chunkCoords[1]));
+            }
+        }
+    }
+
+    for (let ch in renderedChunks) {
+        let chunk = renderedChunks[ch];
+
+        if (((chunk.position.x - camera.position.x) > defaultChunkSize/2) || ((chunk.position.z - camera.position.z) > defaultChunkSize/2)) {
+            delete renderedChunks[`${chunk.position.x/defaultChunkSize}/${chunk.position.z/defaultChunkSize}`];
+            scene.remove(chunk);
+            chunk.geometry.dispose();
+        }
+    }
+
+    prevTime = currentTime;
 
     renderer.render(scene, camera);
 }
