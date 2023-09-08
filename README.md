@@ -2,9 +2,9 @@
 
 A very basic Minecraft clone (this is under active development, don't expect anything fantastic).
 
-DISCLAIMER: I went into this project with no idea how to use Three.JS, so some of the 
-code is AI generated (It's not completely AI generated though, I still had to do the 
-majority myself. I asked it stuff like "How do i add a thing to the scene?".)
+DISCLAIMER: I went into this project with no idea how to use Three.JS, so I
+used AI to learn how to use it. Some small snippets of the code may be 
+AI-generated. I just asked it things like "How do I add an object to the scene".
 
 This project serves as a break from my other projects and as practice for 
 Three.JS / JavaScript, So I will not post updates very often (If I do at all, that is).
