@@ -7,6 +7,10 @@ const renderer = new THREE.WebGLRenderer({
     alpha: true,
 });
 
+this.distanceTo = function (p1x, p1y, p2x, p2y){
+    return Math.sqrt((Math.pow(p1x-p2x,2))+(Math.pow(p1y-p2y,2)));
+};
+
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
@@ -17,21 +21,45 @@ renderer.domElement.addEventListener("click", async () => {
 });
 
 
+const tracks = ['Immersed', 'Heavy Heart', 'Healing'];
+
+let trackNum = 0
+async function playNextTrack() {
+    let aud = playSound(`./assets/music/${tracks[trackNum]}.mp3`);
+    trackNum += 1;
+
+    if (trackNum === tracks.length) {
+        trackNum = 0
+    };
+
+    aud.addEventListener('ended', function() {
+        playNextTrack()
+    });
+}
+
+function startTracks() {
+    playNextTrack();
+    renderer.domElement.removeEventListener("click", startTracks);
+}
+
+renderer.domElement.addEventListener("click", startTracks);
+
+
 var pressedKeys = {};
 window.onkeyup = function(e) { pressedKeys[e.key] = false; }
 window.onkeydown = function(e) { pressedKeys[e.key] = true; }
 
 
 //light thingy
-//sun = new THREE.DirectionalLight( 0xffffff );
-//sun.position.set( 400, 400, 400 );
-//soft = new THREE.DirectionalLight( 0x939393 );
-//soft.position.set( -400, 400, -400 );
-//neath = new THREE.DirectionalLight( 0x5f5f5f );
-//neath.position.set( 0, -400, 0 );
-//scene.add(sun);
-//scene.add(soft);
-//scene.add(neath);
+sun = new THREE.DirectionalLight( 0xffffff );
+sun.position.set( 400, 400, 400 );
+soft = new THREE.DirectionalLight( 0x939393 );
+soft.position.set( -400, 400, -400 );
+neath = new THREE.DirectionalLight( 0x5f5f5f );
+neath.position.set( 0, -400, 0 );
+scene.add(sun);
+scene.add(soft);
+scene.add(neath);
 
 
 const TREE = [
@@ -136,17 +164,18 @@ const TREE = [
 //}
 
 
-const texture = textureLoader.load(`https://media.discordapp.net/attachments/1043652794374160385/1149405236193148988/tile.png`);
+const texture = textureLoader.load(`../assets/tile.png`);
 texture.magFilter = THREE.NearestFilter;
 texture.minFilter = THREE.NearestFilter;
 texture.needsUpdate = true;
 
-const blocktex = new THREE.MeshBasicMaterial({ map: texture});
+const blocktex = new THREE.MeshLambertMaterial({ map: texture});
 
 
 function playSound(url) {
     let aud = new Audio(url);
     aud.play();
+    return aud;
 }
 
 function randInt(max) {
@@ -347,7 +376,7 @@ renderer.domElement.onmousedown = async function(e) {
                 generatedChunks[`${chunkx}/${chunkz}`].blocks[Math.round(point.x)][Math.round(point.y)][Math.round(point.z)] = null;
                 loadChunk(generatedChunks[`${chunkx}/${chunkz}`])
 
-                playSound('./assets/break.ogg');
+                playSound('./assets/sfx/block.mp3');
 
                 break;
             case 3:
@@ -364,7 +393,7 @@ renderer.domElement.onmousedown = async function(e) {
                 generatedChunks[`${chunkx}/${chunkz}`].blocks[Math.round(point.x)][Math.round(point.y)][Math.round(point.z)] = 'planks';
                 loadChunk(generatedChunks[`${chunkx}/${chunkz}`])
 
-                playSound('./assets/place.ogg');
+                playSound('./assets/sfx/block.mp3');
 
                 break;
           }
@@ -495,7 +524,7 @@ function animate() {
     for (let ch in renderedChunks) {
         let chunk = renderedChunks[ch];
 
-        if (((chunk.position.x - camera.position.x) > defaultChunkSize/2) || ((chunk.position.z - camera.position.z) > defaultChunkSize/2)) {
+        if (distanceTo(camera.position.x, camera.position.z, chunk.position.x, chunk.position.z) > defaultChunkSize*1.5) {
             delete renderedChunks[`${chunk.position.x/defaultChunkSize}/${chunk.position.z/defaultChunkSize}`];
             scene.remove(chunk);
             chunk.geometry.dispose();
