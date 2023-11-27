@@ -14,5 +14,14 @@ chunks now reload upon modification
 added trees
 improved terrain generation
 some new blocks
-I removed the shading for performance reasons
+i removed the shading for performance reasons
 fixed delta time
+
+update 3:
+made chunks cubic
+replaced the horrible mining sound effect
+
+update 4:
+added music (thanks kevin macleod)
+replaced the block texture
+fixed chunk unloading
