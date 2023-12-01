@@ -1,13 +1,94 @@
+import * as THREE from 'three';
+import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+
+
+var selectedBlock = null;
+const hotbar = document.getElementById('hotbar');
+for (let i of ['dirt', 'grass', 'planks', 'log', 'stone', 'glass', 'cobble', 'snow']) {
+    hotbar.insertAdjacentHTML('beforeend', `
+    <span class="hotbar-item" id="hotbar-${i}">
+        <h1>
+        ${i}
+        </h1>
+    </span>
+    `)
+}
+
+function changeSkyColor(r, g, b) {
+    document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
+    scene.fog.color = new THREE.Color(`rgb(${r}, ${g}, ${b})`);
+}
+
+function switchHotbarItem(index) {
+    let child = hotbar.children[index];
+    let itemName = child.id.split("-")[1];
+
+    for (let i of hotbar.children) {
+        i.style.borderColor = 'grey'
+    }
+
+    if (selectedBlock === itemName) {
+        selectedBlock = null;
+
+        hand.material = handMat;
+        hand.scale.set(1, 1, 1);
+    } else {
+        selectedBlock = itemName;
+
+        child.style.borderColor = 'white';
+
+        hand.scale.set(2, 2, 1);
+        hand.material = blocktex;
+    
+        let g = hand.geometry;
+    
+        let newUvs = [0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0];
+        for (let i in newUvs) {
+            g.attributes.uv.array[i] = newUvs[i]
+        }
+    
+        let tog = "x";
+        for (let i in g.attributes.uv.array) {
+            g.attributes.uv.array[i] /= 10
+    
+            if (tog === 'x') {
+                g.attributes.uv.array[i] += blockIndex[selectedBlock].UV[0];
+    
+                tog = 'y'
+            } else {
+                g.attributes.uv.array[i] += blockIndex[selectedBlock].UV[1];
+    
+                tog = 'x'
+            }
+        }
+    
+        g.attributes.uv.needsUpdate = true;
+    }
+}
+
+
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
 const textureLoader = new THREE.TextureLoader();
+const timer = ms => new Promise(res => setTimeout(res, ms));
+
+window.addEventListener("resize", (event) => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+const clock = new THREE.Clock();
 
 const renderer = new THREE.WebGLRenderer({
     antialias: false,
     alpha: true,
 });
 
-this.distanceTo = function (p1x, p1y, p2x, p2y){
+function distanceTo (p1x, p1y, p2x, p2y){
     return Math.sqrt((Math.pow(p1x-p2x,2))+(Math.pow(p1y-p2y,2)));
 };
 
@@ -16,7 +97,7 @@ document.body.appendChild(renderer.domElement);
 
 const controls = new PointerLockControls(camera, renderer.domElement);
 
-renderer.domElement.addEventListener("click", async () => {
+document.addEventListener("click", async () => {
     renderer.domElement.requestPointerLock();
 });
 
@@ -42,24 +123,47 @@ function startTracks() {
     renderer.domElement.removeEventListener("click", startTracks);
 }
 
-renderer.domElement.addEventListener("click", startTracks);
+//renderer.domElement.addEventListener("click", startTracks);
 
 
 var pressedKeys = {};
-window.onkeyup = function(e) { pressedKeys[e.key] = false; }
-window.onkeydown = function(e) { pressedKeys[e.key] = true; }
+window.onkeyup = function(e) { pressedKeys[e.key.toLowerCase()] = false; }
+window.onkeydown = function(e) { pressedKeys[e.key.toLowerCase()] = true; }
 
 
 //light thingy
-sun = new THREE.DirectionalLight( 0xffffff );
+let sun = new THREE.DirectionalLight( 0xffffff );
 sun.position.set( 400, 400, 400 );
-soft = new THREE.DirectionalLight( 0x939393 );
+let soft = new THREE.DirectionalLight( 0x939393 );
 soft.position.set( -400, 400, -400 );
-neath = new THREE.DirectionalLight( 0x5f5f5f );
+let neath = new THREE.DirectionalLight( 0x5f5f5f );
 neath.position.set( 0, -400, 0 );
 scene.add(sun);
 scene.add(soft);
 scene.add(neath);
+
+const blockIndex = {
+    'dirt':{UV:[0, .9], transparent:false, sound:'gravel'},
+    'grass':{UV:[.1, .9], transparent:false, sound:'grass'},
+    'stone':{UV:[.2, .9], transparent:false, sound:'stone'},
+    'bedrock':{UV:[.3, .9], transparent:false, sound:'stone', unbreakable:true},
+    'log':{UV:[.4, .9], transparent:false, sound:'wood'},
+    'leaves':{UV:[.5, .9], transparent:true, sound:'cloth'},
+    'coal ore':{UV:[.6, .9], transparent:false, sound:'stone'},
+    'iron ore':{UV:[.7, .9], transparent:false, sound:'stone'},
+    'diamond ore':{UV:[.8, .9], transparent:false, sound:'stone'},
+    'gold ore':{UV:[.9, .9], transparent:false, sound:'stone'},
+    'ruby ore':{UV:[0, .8], transparent:false, sound:'stone'},
+    'sapphire ore':{UV:[.1, .8], transparent:false, sound:'stone'},
+    'glass':{UV:[.2, .8], transparent:true, sound:'glass'},
+    'snow':{UV:[.3, .8], transparent:false, sound:'snow'},
+    'planks':{UV:[.4, .8], transparent:false, sound:'wood'},
+    'sand':{UV:[.5, .8], transparent:false, sound:'sand'},
+    'water':{UV:[.6, .8], transparent:true, sound:'stone', unbreakable:true},
+    'cobble':{UV:[.7, .8], transparent:false, sound:'stone'},
+}
+
+const transparentBlocks = [null, 'leaves', 'glass', 'water'];
 
 
 const TREE = [
@@ -143,37 +247,17 @@ const TREE = [
 ]
 
 
-//const blockIndex = ['dirt', 'grass', 'stone', 'bedrock', 'coal-ore', 'iron-ore', 'gold-ore', 'diamond-ore', 'ruby-ore', 'sapphire-ore', 'planks', 'log', 'brick', 'stone-brick']
-//function loadBlockTexture(name) {
-//    const texture = textureLoader.load(`https://raw.githubusercontent.com/Spiceinajar/mine-thing/main/assets/textures/${name}.png`);
-//    texture.magFilter = THREE.NearestFilter;
-//    texture.minFilter = THREE.NearestFilter;
-//    texture.needsUpdate = true;
-//
-//    const material = new THREE.MeshBasicMaterial({ map: texture});
-//    //material.side = THREE.DoubleSide;
-//
-//    return material
-//}
-//
-//textures = {}
-//for (var t in blockIndex) {
-//    let tex = blockIndex[t];
-//
-//    textures[tex] = loadBlockTexture(tex);
-//}
-
-
-const texture = textureLoader.load(`../assets/tile.png`);
+const texture = textureLoader.load(`./assets/devart.png`);
 texture.magFilter = THREE.NearestFilter;
 texture.minFilter = THREE.NearestFilter;
-texture.needsUpdate = true;
+//texture.needsUpdate = true;
 
-const blocktex = new THREE.MeshLambertMaterial({ map: texture});
+const blocktex = new THREE.MeshLambertMaterial({ map: texture }); //, transparent: true 
 
 
-function playSound(url) {
+function playSound(url, vol=1) {
     let aud = new Audio(url);
+    aud.volume = vol;
     aud.play();
     return aud;
 }
@@ -182,9 +266,30 @@ function randInt(max) {
     return Math.floor(Math.random()*max)
 }
 
-defaultChunkSize = 16;
+function fractalNoise(x, z) {
+    let octaves = [3, 6, 12, 24];
+
+    let nv1 = noise.perlin2(x/(octaves[0]*33), z/(octaves[0]*33))*(octaves[0]*8)
+    let nv2 = noise.perlin2(x/(octaves[1]*33), z/(octaves[1]*33))*(octaves[1]*8)
+    let nv3 = noise.perlin2(x/(octaves[2]*33), z/(octaves[2]*33))*(octaves[2]*8)
+    let nv4 = noise.perlin2(x/(octaves[3]*33), z/(octaves[3]*33))*(octaves[3]*8)
+
+    let noiseval = nv1;
+    noiseval += 0.5 * nv2;
+    noiseval += 0.25 * nv3;
+    noiseval += 0.125 * nv4;
+    noiseval = Math.round(noiseval)+50
+
+    return noiseval;
+}
+
+let xArray;
+let yArray;
+let zArray;
+
+var defaultChunkSize = 16;
 var generatedChunks = {};
-function generateChunk(xLocation, zLocation, size=defaultChunkSize, height=32) {
+async function generateChunk(xLocation, yLocation, zLocation, size=defaultChunkSize) {
     xArray = [];
     var bCount = 0;
 
@@ -192,139 +297,280 @@ function generateChunk(xLocation, zLocation, size=defaultChunkSize, height=32) {
 
     for (var x = 0; x < size; x++) {
         yArray = [];
-        for (var y = 0; y < height; y++) {
+        for (var y = 0; y < defaultChunkSize; y++) {
             zArray = [];
             for (var z = 0; z < size; z++) {
                 let globalX = x+(xLocation*size);
+                let globalY = y+(yLocation*size);
                 let globalZ = z+(zLocation*size);
 
-                let amp = 15;
-                let noiseval = Math.round(noise.perlin2(globalX/50, globalZ/50)*amp)+(height/2);
+                let noiseval = fractalNoise(globalX, globalZ);
 
                 var blockType = null;
-                if (y === noiseval) {
+                if (globalY === noiseval) {
                     blockType = 'grass'
-                    if (randInt(60) === 0) {
-                        treePositions.push([x, y, z]);
+                    if ((globalY > 8)) {
+                        if (randInt(60) === 0) {
+                            treePositions.push([globalX, globalY, globalZ, x, y, z]);
+                        }
                     }
 
+                    if (globalY > 200) {
+                        blockType = 'snow'
+                    }
+
+                    if ((globalY < 7)) {
+                        blockType = 'sand'
+                    }
                 }
-                if (y < noiseval) {
+                if (globalY < noiseval) {
                     blockType = 'dirt'
                 }
-                if (y < noiseval - (height/3)) {
+                if (globalY < noiseval - 15) {
                     blockType = 'stone';
 
                     if (randInt(30) === 0) {
-                        blockType = 'coal-ore'
+                        blockType = 'coal ore'
                     }
                     if (randInt(100) === 0) {
-                        blockType = 'iron-ore'
+                        blockType = 'iron ore'
                     }
                     if (randInt(400) === 0) {
-                        blockType = 'gold-ore'
+                        blockType = 'gold ore'
                     }
                     if (randInt(400) === 0) {
-                        blockType = 'ruby-ore'
+                        blockType = 'ruby ore'
                     }
                     if (randInt(400) === 0) {
-                        blockType = 'sapphire-ore'
+                        blockType = 'sapphire ore'
                     }
                     if (randInt(1000) === 0) {
-                        blockType = 'diamond-ore'
+                        blockType = 'diamond ore'
+                    }
+
+                    if (noise.perlin3(globalX/10, globalY/10, globalZ/10) > 0) {
+                        blockType = null;
                     }
                 }
-                if (y === 0) {
+
+                if (globalY === -128) {
                     blockType = 'bedrock'
                 }
 
-                if (blockType) {
-                    bCount += 1
+                if (globalY === -127) {
+                    if ((Math.random()*2)>1) {
+                        blockType = 'bedrock'
+                    }
                 }
 
-                zArray.push(blockType)
+                if (globalY < -128) {
+                    blockType = null
+                }
+
+                //if ((blockType === null) && (globalY < 5)) {
+                //    blockType = 'water'
+                //}
+
+                if (blockType) {
+                    bCount += 1;
+                }
+
+                zArray.push(blockType);
             }
             yArray.push(zArray)
         }
         xArray.push(yArray)
     }
 
+    generatedChunks[`${xLocation}/${yLocation}/${zLocation}`] = {
+        x:xLocation,
+        y:yLocation,
+        z:zLocation,
+        size:size,
+        blocks:xArray,
+        bCount:bCount
+    };
+
     for (let t in treePositions) {
         let tr = treePositions[t];
         for (let b in TREE) {
-            try {
-                let block = TREE[b];
-                xArray[block.x + tr[0]][block.y + tr[1]][block.z + tr[2]] = block.type
-            } catch {}
+            let block = TREE[b];
+            putBlock(block.x + tr[0], block.y + tr[1], block.z + tr[2], block.type)
         }
     }
 
-    generatedChunks[`${xLocation}/${zLocation}`] = {
-        x:xLocation,
-        z:zLocation,
-        size:size,
-        height:height,
-        blocks:xArray,
-        bCount:bCount
+    let pb = pendingBlocks[`${xLocation}/${yLocation}/${zLocation}`];
+    if (pb) {
+        for (let b of pb) {
+            //xArray[b[0]][b[1]][b[2]] = b[3]
+            putBlock(b[0], b[1], b[2], b[3])
+        }
     }
 
-    return generatedChunks[`${xLocation}/${zLocation}`];
-}
-
-const colors = {
-    'grass':new THREE.Color("rgb(0, 100, 0)"),
-    'dirt':new THREE.Color("rgb(60, 40, 0)"),
-    'stone':new THREE.Color("rgb(50, 50, 50)"),
-    'bedrock':new THREE.Color("rgb(20, 20, 20)"),
-    'leaves':new THREE.Color("rgb(0, 60, 0)"),
-    'log':new THREE.Color("rgb(40, 20, 0)"),
-    'planks':new THREE.Color("rgb(150, 140, 50)"),
+    return generatedChunks[`${xLocation}/${yLocation}/${zLocation}`];
 }
 
 var renderedChunks = {};
-async function loadChunk(chunk) {
-    if (renderedChunks[`${chunk.x}/${chunk.z}`]) {
-        scene.remove(renderedChunks[`${chunk.x}/${chunk.z}`]);
-        renderedChunks[`${chunk.x}/${chunk.z}`].geometry.dispose();
-    }
+async function loadChunk(chunk, timeout=true) {
+    const matrix = new THREE.Matrix4();
 
-    const geometry = new THREE.BoxGeometry();
-    const chunkGeom = new THREE.InstancedMesh(geometry, blocktex, chunk.bCount);
+    const pxGeometry = new THREE.PlaneGeometry( 1, 1 );
+    pxGeometry.rotateY( Math.PI / 2 );
+    pxGeometry.translate( .5, 0, 0 );
+
+    const nxGeometry = new THREE.PlaneGeometry( 1, 1 );
+    nxGeometry.rotateY( - Math.PI / 2 );
+    nxGeometry.translate( - .5, 0, 0 );
+
+    const pyGeometry = new THREE.PlaneGeometry( 1, 1 );
+
+    pyGeometry.rotateX( - Math.PI / 2 );
+    pyGeometry.translate( 0, .5, 0 );
+
+    const nyGeometry = new THREE.PlaneGeometry( 1, 1 );
+    nyGeometry.rotateX(Math.PI / 2 );
+    nyGeometry.translate( 0, - .5, 0 );
+
+    const pzGeometry = new THREE.PlaneGeometry( 1, 1 );
+    pzGeometry.translate( 0, 0, .5 );
+
+    const nzGeometry = new THREE.PlaneGeometry( 1, 1 );
+    nzGeometry.rotateY( Math.PI );
+    nzGeometry.translate( 0, 0, - .5 );
+
+    const geometries = [];
 
     var totalIter = 0;
     for (var x = 0; x < chunk.size; x++) {
-        for (var y = 0; y < chunk.height; y++) {
+        if (timeout) {
+            await timer(.005);
+        }
+        
+        for (var y = 0; y < chunk.size; y++) {
             for (var z = 0; z < chunk.size; z++) {
+
                 let bType = chunk.blocks[x][y][z];
 
-                let exposed = false;
-                if (x === 0 ||
-                    z === 0 ||
-                    x === (chunk.size-1) ||
-                    z === (chunk.size-1) ||
-                    y === 0 ||
-                    y === (chunk.height-1)
-                    ){
-                    exposed = true;
 
-                } else if (
-                    chunk.blocks[x][y+1][z] === null ||
-                    chunk.blocks[x][y-1][z] === null ||
-                    chunk.blocks[x+1][y][z] === null ||
-                    chunk.blocks[x-1][y][z] === null ||
-                    chunk.blocks[x][y][z+1] === null ||
-                    chunk.blocks[x][y][z-1] === null
-                    ){
-                    exposed = true;
+                if (blockIndex[bType]) {
+                    let yOffset = blockIndex[bType].UV[1];
+                    let xOffset = blockIndex[bType].UV[0];
+                
+                    for (let g of [pxGeometry, nxGeometry, pyGeometry, nyGeometry, pzGeometry, nzGeometry]) {
+                        g.attributes.uv.array[0] = 0;
+                        g.attributes.uv.array[1] = 1;
+                        g.attributes.uv.array[2] = 1;
+                        g.attributes.uv.array[3] = 1;
+                        g.attributes.uv.array[4] = 0;
+                        g.attributes.uv.array[5] = 0;
+                        g.attributes.uv.array[6] = 1;
+                        g.attributes.uv.array[7] = 0;
+                
+                        let tog = "x";
+                        for (let i in g.attributes.uv.array) {
+                            g.attributes.uv.array[i] /= 10
+                
+                            if (tog === 'x') {
+                                g.attributes.uv.array[i] += xOffset;
+                    
+                                tog = 'y'
+                            } else {
+                                g.attributes.uv.array[i] += yOffset;
+                    
+                                tog = 'x'
+                            }
+                        }
+                    }
                 }
 
-                if (bType && exposed) {
-                    const matrix = new THREE.Matrix4();
-                    matrix.setPosition(x, y, z);
-                    chunkGeom.setMatrixAt(totalIter, matrix);
+                let exposed = {
+                    posX:false,
+                    negX:false,
+                    posY:false,
+                    negY:false,
+                    posZ:false,
+                    negZ:false,
+                };
 
-                    if (colors[bType]) {
-                        chunkGeom.setColorAt(totalIter, colors[bType]);
+                if (x === 0) {
+                    exposed.negX = true
+                }
+                if (y === 0) {
+                    exposed.negY = true
+                }
+                if (z === 0) {
+                    exposed.negZ = true
+                }
+
+                if (x === chunk.size-1) {
+                    exposed.posX = true
+                }
+                if (y === chunk.size-1) {
+                    exposed.posY = true
+                }
+                if (z === chunk.size-1) {
+                    exposed.posZ = true
+                }
+
+                if (! exposed.posX) {
+                    if (transparentBlocks.includes(chunk.blocks[x+1][y][z]) && ! (chunk.blocks[x+1][y][z] === bType)) {
+                        exposed.posX = true
+                    }
+                }
+                if (! exposed.negX) {
+                    if (transparentBlocks.includes(chunk.blocks[x-1][y][z]) && ! (chunk.blocks[x-1][y][z] === bType)) {
+                        exposed.negX = true
+                    }
+                }
+
+                if (! exposed.posY) {
+                    if (transparentBlocks.includes(chunk.blocks[x][y+1][z]) && ! (chunk.blocks[x][y+1][z] === bType)) {
+                        exposed.posY = true
+                    }
+                }
+                if (! exposed.negY) {
+                    if (transparentBlocks.includes(chunk.blocks[x][y-1][z]) && ! (chunk.blocks[x][y-1][z] === bType)) {
+                        exposed.negY = true
+                    }
+                }
+
+                if (! exposed.posZ) {
+                    if (transparentBlocks.includes(chunk.blocks[x][y][z+1]) && ! (chunk.blocks[x][y][z+1] === bType)) {
+                        exposed.posZ = true
+                    }
+                }
+                if (! exposed.negZ) {
+                    if (transparentBlocks.includes(chunk.blocks[x][y][z-1]) && ! (chunk.blocks[x][y][z-1] === bType)) {
+                        exposed.negZ = true
+                    }
+                }
+
+                if (bType) {
+                    matrix.makeTranslation(
+                        x,
+                        y,
+                        z,
+                    );
+
+                    if (exposed.posY) {
+                        geometries.push( pyGeometry.clone().applyMatrix4( matrix ) );
+                    }
+                    if (exposed.negY) {
+                        geometries.push( nyGeometry.clone().applyMatrix4( matrix ) );
+                    }
+
+                    if (exposed.posX) {
+                        geometries.push( pxGeometry.clone().applyMatrix4( matrix ) );
+                    }
+                    if (exposed.negX) {
+                        geometries.push( nxGeometry.clone().applyMatrix4( matrix ) );
+                    }
+
+                    if (exposed.posZ) {
+                        geometries.push( pzGeometry.clone().applyMatrix4( matrix ) );
+                    }
+                    if (exposed.negZ) {
+                        geometries.push( nzGeometry.clone().applyMatrix4( matrix ) );
                     }
                     
                     totalIter += 1;
@@ -333,21 +579,124 @@ async function loadChunk(chunk) {
         }
     }
 
-    scene.add(chunkGeom);
-    chunkGeom.position.x = chunk.x*chunk.size;
-    chunkGeom.position.z = chunk.z*chunk.size;
+    let geometry;
 
-    renderedChunks[`${chunk.x}/${chunk.z}`] = chunkGeom;
+    if (geometries.length > 0) { //the geometry merger throws errors when there is no geometry to merge, so i add this invisible geometry filler
+        geometry = BufferGeometryUtils.mergeGeometries( geometries );
+        geometry.computeBoundingSphere();
+    } else {
+        geometry = new THREE.BoxGeometry(0, 0)
+    }
+
+    let oldChunk = renderedChunks[`${chunk.x}/${chunk.y}/${chunk.z}`];
+
+    const mesh = new THREE.Mesh( geometry, blocktex );
+    scene.add( mesh );
+
+    mesh.position.x = chunk.x*chunk.size;
+    mesh.position.y = chunk.y*chunk.size;
+    mesh.position.z = chunk.z*chunk.size;
+
+    renderedChunks[`${chunk.x}/${chunk.y}/${chunk.z}`] = mesh;
+
+    //destroy previous chunk
+    if (oldChunk) {
+        scene.remove(oldChunk);
+        oldChunk.geometry.dispose();
+    }
 }
 
-renderer.domElement.onmousedown = async function(e) {
+let pendingBlocks = {};
+function putBlock(x, y, z, type, reload=false) {
+    let chunkPos = {
+        x:Math.floor(x/defaultChunkSize),
+        y:Math.floor(y/defaultChunkSize),
+        z:Math.floor(z/defaultChunkSize)
+    }
+
+    let blockPos = {
+        x:((x % defaultChunkSize) + defaultChunkSize) % defaultChunkSize,
+        y:((y % defaultChunkSize) + defaultChunkSize) % defaultChunkSize,
+        z:((z % defaultChunkSize) + defaultChunkSize) % defaultChunkSize
+    }
+
+    if (generatedChunks[`${chunkPos.x}/${chunkPos.y}/${chunkPos.z}`]) {
+        generatedChunks[`${chunkPos.x}/${chunkPos.y}/${chunkPos.z}`].blocks[blockPos.x][blockPos.y][blockPos.z] = type;
+
+        if (reload) {
+            loadChunk(generatedChunks[`${chunkPos.x}/${chunkPos.y}/${chunkPos.z}`], false)
+        }
+    } else {
+        if (! pendingBlocks[`${chunkPos.x}/${chunkPos.y}/${chunkPos.z}`]) {
+            pendingBlocks[`${chunkPos.x}/${chunkPos.y}/${chunkPos.z}`] = []
+        }
+
+        pendingBlocks[`${chunkPos.x}/${chunkPos.y}/${chunkPos.z}`].push([x, y, z, type])
+    }
+}
+
+function getBlock(x, y, z) {
+    let chunkPos = {
+        x:Math.floor(x/defaultChunkSize),
+        y:Math.floor(y/defaultChunkSize),
+        z:Math.floor(z/defaultChunkSize)
+    }
+
+    let blockPos = {
+        x:((x % defaultChunkSize) + defaultChunkSize) % defaultChunkSize,
+        y:((y % defaultChunkSize) + defaultChunkSize) % defaultChunkSize,
+        z:((z % defaultChunkSize) + defaultChunkSize) % defaultChunkSize
+    }
+
+    if (generatedChunks[`${chunkPos.x}/${chunkPos.y}/${chunkPos.z}`]) {
+        return generatedChunks[`${chunkPos.x}/${chunkPos.y}/${chunkPos.z}`].blocks[blockPos.x][blockPos.y][blockPos.z]
+    } else {
+        return null;
+    }
+}
+
+
+//hand
+let handMat = new THREE.MeshLambertMaterial({ color: 0xffd487 } );
+let hand = new THREE.Mesh(new THREE.BoxGeometry(.25, .25, .5), handMat);
+hand.position.set( .6, -.5, -.8);
+hand.lookAt(new THREE.Vector3(.5, 0, -2))
+camera.add(hand);
+//hand.onBeforeRender = function (renderer) {renderer.clearDepth();};
+scene.add(camera);
+
+
+var waterTexture = textureLoader.load( './assets/water.png', function ( texture ) {
+
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.offset.set( 0, 0 );
+    texture.repeat.set( 1000, 1000 );
+    texture.magFilter = THREE.NearestFilter;
+    texture.minFilter = THREE.NearestFilter;
+
+} );
+
+let ocean = new THREE.Mesh(
+    new THREE.PlaneGeometry(1000, 1000), 
+    new THREE.MeshPhongMaterial({ map: waterTexture, side: THREE.DoubleSide, transparent:true, opacity:.8} )
+);
+
+ocean.position.set(0, 4.4, 0);
+ocean.lookAt(new THREE.Vector3(0, 100, 0));
+
+scene.add(ocean)
+
+
+
+
+renderer.domElement.onmousedown = function(e) {
     const raycaster = new THREE.Raycaster();
     const direction = new THREE.Vector3();
     
     camera.getWorldDirection(direction);
     raycaster.set(camera.position, direction);
     
-    const intersects = raycaster.intersectObjects(scene.children);
+    const intersects = raycaster.intersectObjects(Object.values(renderedChunks));
     
     if (intersects.length > 0) {
         var point = intersects[0].point;
@@ -355,11 +704,8 @@ renderer.domElement.onmousedown = async function(e) {
         const hit = intersects[0].object;
 
         let chunkx;
+        let chunky;
         let chunkz;
-
-        console.log(hit.position)
-
-        console.log(`${chunkx}/${chunkz}`);
 
         switch (e.which) {
             case 1:
@@ -367,41 +713,39 @@ renderer.domElement.onmousedown = async function(e) {
                 point.y -= normal.y*.5;
                 point.z -= normal.z*.5;
         
-                chunkx = hit.position.x/defaultChunkSize;
-                chunkz = hit.position.z/defaultChunkSize;
-
-                point.x -=  chunkx*defaultChunkSize;
-                point.z -=  chunkz*defaultChunkSize;
-
-                generatedChunks[`${chunkx}/${chunkz}`].blocks[Math.round(point.x)][Math.round(point.y)][Math.round(point.z)] = null;
-                loadChunk(generatedChunks[`${chunkx}/${chunkz}`])
-
-                playSound('./assets/sfx/block.mp3');
+                putBlock(Math.round(point.x), Math.round(point.y), Math.round(point.z), null, true)
+                playSound('./assets/sfx/destroy.ogg');
 
                 break;
             case 3:
-                point.x += normal.x*.99;
-                point.y += normal.y*.99;
-                point.z += normal.z*.99;
-        
-                chunkx = Math.floor(point.x/defaultChunkSize);
-                chunkz = Math.floor(point.z/defaultChunkSize);
-
-                point.x -=  chunkx*defaultChunkSize;
-                point.z -=  chunkz*defaultChunkSize;
-
-                generatedChunks[`${chunkx}/${chunkz}`].blocks[Math.round(point.x)][Math.round(point.y)][Math.round(point.z)] = 'planks';
-                loadChunk(generatedChunks[`${chunkx}/${chunkz}`])
-
-                playSound('./assets/sfx/block.mp3');
-
-                break;
+                if (selectedBlock) {
+                    point.x += normal.x*.5;
+                    point.y += normal.y*.5;
+                    point.z += normal.z*.5;
+            
+                    putBlock(Math.round(point.x), Math.round(point.y), Math.round(point.z), selectedBlock, true)
+                    playSound('./assets/sfx/place.ogg');
+    
+                    break;
+                }
           }
     }
 }
 
-var playerYVelocity = 0;
-camera.position.y = 50;
+let spawnX = (Math.random() - .5)*100;
+let spawnZ = (Math.random() - .5)*100;
+camera.position.set(spawnX, fractalNoise(spawnX, spawnZ)+2, spawnZ);
+
+var playerVelocity = {
+    x:0,
+    y:0,
+    z:0,
+    terminal_x:5,
+    terminal_y:10,
+    terminal_z:5,
+    airResistance:.5,
+    walk_force:1
+}
 
 //makes a raycast
 function cast(origin, direction, length) {
@@ -410,128 +754,493 @@ function cast(origin, direction, length) {
 
     raycaster.set(origin, direction);
 
-    return raycaster.intersectObjects(scene.children);
+    return raycaster.intersectObjects(Object.values(renderedChunks));
 }
 
 
-//epic loop
-var dt;
-var prevTime = 0;
-function animate() {
-    const currentTime = performance.now();
-    const dt = (currentTime - prevTime) / 1000;
 
-    requestAnimationFrame(animate);
-
-    camera.position.y += playerYVelocity*dt;
-
-    oldCamX = camera.position.x;
-    oldCamY = camera.position.y;
-    oldCamZ = camera.position.z;
-
-    if (pressedKeys["w"]) {
-        camera.translateZ(-5*dt)
-    }
-    if (pressedKeys["s"]) {
-        camera.translateZ(5*dt)
-    }
-    if (pressedKeys["a"]) {
-        camera.translateX(-5*dt)
-    }
-    if (pressedKeys["d"]) {
-        camera.translateX(5*dt)
-    }
-
-    //upper wall raycasts (make sure the player doesnt go through walls)
-    camera.position.y = oldCamY;
-    if (cast(camera.position, new THREE.Vector3(0, 0, 1), .4).length > 0) {
-        camera.position.z = oldCamZ;
-    }
-    if (cast(camera.position, new THREE.Vector3(0, 0, -1), .4).length > 0) {
-        camera.position.z = oldCamZ;
-    }
-
-    if (cast(camera.position, new THREE.Vector3(1, 0, 0), .4).length > 0) {
-        camera.position.x = oldCamX;
-    }
-    if (cast(camera.position, new THREE.Vector3(-1, 0, 0), .4).length > 0) {
-        camera.position.x = oldCamX;
-    }
-
-
-    //lower wall raycasts (make sure the player doesnt go through walls)
-    if (cast(new THREE.Vector3(camera.position.x, camera.position.y-1, camera.position.z), new THREE.Vector3(0, 0, 1), .4).length > 0) {
-        camera.position.z = oldCamZ;
-    }
-    if (cast(new THREE.Vector3(camera.position.x, camera.position.y-1, camera.position.z), new THREE.Vector3(0, 0, -1), .4).length > 0) {
-        camera.position.z = oldCamZ;
-    }
-
-    if (cast(new THREE.Vector3(camera.position.x, camera.position.y-1, camera.position.z), new THREE.Vector3(1, 0, 0), .4).length > 0) {
-        camera.position.x = oldCamX;
-    }
-    if (cast(new THREE.Vector3(camera.position.x, camera.position.y-1, camera.position.z), new THREE.Vector3(-1, 0, 0), .4).length > 0) {
-        camera.position.x = oldCamX;
-    }
-
-
-    //floor raycast (makes sure the player can't go through the floor)
-    if (cast(camera.position, new THREE.Vector3(0, -1, 0), 1.5).length === 0) {
-        //var intersectPoint = intersects[0].point;
-
-        if (playerYVelocity > -10) {
-            playerYVelocity -= 1;
-        }
-    } else {
-        if (pressedKeys[" "]) {
-            if (playerYVelocity === 0) {
-                playerYVelocity = 8
-            }
-        }
-
-        if (playerYVelocity < 0) {
-            playerYVelocity = 0;
-        }
-    }
-
-
-    //head raycast (makes sure the player can't go through the ceiling)
-    if (cast(camera.position, new THREE.Vector3(0, 1, 0), .5).length > 0) {
-        if (playerYVelocity > 0) {
-            playerYVelocity = 0;
-        }
-    }
-
-
-
-    currentChunkX = Math.round(camera.position.x/defaultChunkSize);
-    currentChunkZ = Math.round(camera.position.z/defaultChunkSize);
-
-    surrounding = [[-1, -1], [-1, 0], [0, 0], [0, -1]];
+async function chunkLoader() {
     for (let ch in surrounding) {
-        let chunkCoords = [surrounding[ch][0] + currentChunkX, surrounding[ch][1] + currentChunkZ];
+        let chunkCoords = [surrounding[ch][0] + currentChunkX, surrounding[ch][1] + currentChunkY, surrounding[ch][2] + currentChunkZ];
 
-        if (! renderedChunks[`${chunkCoords[0]}/${chunkCoords[1]}`]) {
-            if (generatedChunks[`${chunkCoords[0]}/${chunkCoords[1]}`]) {
-                loadChunk(generatedChunks[`${chunkCoords[0]}/${chunkCoords[1]}`]);
+        if (! renderedChunks[`${chunkCoords[0]}/${chunkCoords[1]}/${chunkCoords[2]}`]) {
+            if (generatedChunks[`${chunkCoords[0]}/${chunkCoords[1]}/${chunkCoords[2]}`]) {
+                await loadChunk(generatedChunks[`${chunkCoords[0]}/${chunkCoords[1]}/${chunkCoords[2]}`]);
                 
             } else {
-                loadChunk(generateChunk(chunkCoords[0], chunkCoords[1]));
+                await loadChunk(await generateChunk(chunkCoords[0], chunkCoords[1], chunkCoords[2]));
             }
         }
     }
 
     for (let ch in renderedChunks) {
         let chunk = renderedChunks[ch];
+    
+        //if (distanceTo(camera.position.x, camera.position.z, chunk.position.x, chunk.position.z) > renderDistX*defaultChunkSize+15) {
+        //    delete renderedChunks[`${chunk.position.x/defaultChunkSize}/${chunk.position.y/defaultChunkSize}/${chunk.position.z/defaultChunkSize}`];
+        //    scene.remove(chunk);
+        //    chunk.geometry.dispose();
+        //}
 
-        if (distanceTo(camera.position.x, camera.position.z, chunk.position.x, chunk.position.z) > defaultChunkSize*1.5) {
-            delete renderedChunks[`${chunk.position.x/defaultChunkSize}/${chunk.position.z/defaultChunkSize}`];
+        let chX = Math.round((chunk.position.x-camera.position.x)/defaultChunkSize);
+        let chY = Math.round((chunk.position.y-camera.position.y)/defaultChunkSize);
+        let chZ = Math.round((chunk.position.z-camera.position.z)/defaultChunkSize);
+
+        let deload = false;
+
+        if (chX > (renderDistX+1)) {
+            deload = true
+        }
+        if (chX < -(renderDistX+1)) {
+            deload = true
+        }
+
+        if (chZ > (renderDistZ+1)) {
+            deload = true
+        }
+        if (chZ < -(renderDistZ+1)) {
+            deload = true
+        }
+
+        if (chY > (renderDistY+1)) {
+            deload = true
+        }
+        if (chY < -(renderDistY+1)) {
+            deload = true
+        }
+
+
+        if (deload) {
+            delete renderedChunks[`${chunk.position.x/defaultChunkSize}/${chunk.position.y/defaultChunkSize}/${chunk.position.z/defaultChunkSize}`];
             scene.remove(chunk);
             chunk.geometry.dispose();
         }
     }
 
-    prevTime = currentTime;
+    setTimeout(() => {
+        chunkLoader()
+    }, 100);
+}
+
+
+
+let renderDistX = 3;
+let renderDistY = 3;
+let renderDistZ = 3;
+
+scene.fog = new THREE.Fog(0xbdfffe, (renderDistX*defaultChunkSize)/2, renderDistX*defaultChunkSize);
+
+let surrounding = [];
+
+for (var x = -renderDistX; x < renderDistX; x++) {
+    for (var y = -renderDistY; y < renderDistY; y++) {
+        for (var z = -renderDistZ; z < renderDistZ; z++) {
+
+            surrounding.push([x, y, z]);
+            await loadChunk(await generateChunk(x + (Math.round(camera.position.x/defaultChunkSize)), y + (Math.round(camera.position.y/defaultChunkSize)), z + (Math.round(camera.position.z/defaultChunkSize))), false); //preload chunks
+        }
+    }
+}
+
+let oldCamX;
+let oldCamY;
+let oldCamZ;
+let currentChunkX;
+let currentChunkY;
+let currentChunkZ;
+
+chunkLoader();
+
+let stepTimeout = 1;
+async function stepSound(loop=false) { //wh- what are you doing step-sound?? (im sorry (not really))
+    let speed = (Math.abs(playerVelocity.x+playerVelocity.z)*10)+500;
+    speed = (1000 - speed)
+    if (speed > 10) {
+        stepTimeout = speed
+    } else {
+        stepTimeout = 10
+    }
+    
+    let ground = getBlock(
+        Math.round(camera.position.x), 
+        Math.round(camera.position.y-2), 
+        Math.round(camera.position.z)
+    )
+    
+    if (ground && (! underwater)) {
+        let ranges = {
+            'cloth':4,
+            'glass':4,
+            'grass':6,
+            'gravel':4,
+            'sand':5,
+            'snow':4,
+            'stone':6,
+            'wood':6
+        }
+    
+        if (! (playerVelocity.z === 0)) {
+            playSound(`./assets/sfx/step/${blockIndex[ground].sound}${Math.ceil(Math.random()*ranges[blockIndex[ground].sound])}.ogg`, .2);
+        }
+    }
+
+    if (loop) {
+        setTimeout(() => {
+            stepSound(true)
+        }, stepTimeout);
+    }
+}
+
+stepSound(true)
+
+addEventListener("keyup", (e) => {
+    for (let i of [1, 2, 3, 4, 5, 6, 7, 8, 9]) {
+        if (e.key === ("" + i)) {
+            switchHotbarItem(i - 1)
+        }
+    }
+});
+
+var gravity = 1;
+var underwater = false;
+let oldCamPos;
+
+//epic loop
+var dt;
+function animate() {
+    dt = clock.getDelta();
+
+    requestAnimationFrame(animate);
+
+    oldCamPos = {
+        'x':camera.position.x,
+        'y':camera.position.y,
+        'z':camera.position.z,
+    }
+
+    ocean.position.x = Math.round(camera.position.x);
+    ocean.position.z = Math.round(camera.position.z);
+
+    if (pressedKeys["w"]) {
+        playerVelocity.z -= playerVelocity.walk_force
+    }
+    if (pressedKeys["s"]) {
+        playerVelocity.z += playerVelocity.walk_force
+    }
+    if (pressedKeys["a"]) {
+        playerVelocity.x -= playerVelocity.walk_force
+    }
+    if (pressedKeys["d"]) {
+        playerVelocity.x += playerVelocity.walk_force
+    }
+
+    if (pressedKeys["shift"]) { // i think its a little stupid that minecraft uses double tap W to run instead of the standard shift, so im changing that
+        playerVelocity[`terminal_z`] = 8
+    } else {
+        playerVelocity[`terminal_z`] = 4
+    }
+
+
+
+
+    if (camera.position.y < ocean.position.y) { //the overlay only activates if the player is fully submerged
+        document.getElementById('overlay').style.backgroundColor = 'rgba(0, 50, 255, 0.5)';
+    } else {
+        document.getElementById('overlay').style.backgroundColor = 'rgba(0, 0, 0, 0)';
+    }
+
+    if (camera.position.y < (ocean.position.y + 1)) { //there is a margin here to create the bobbing effect while swimming, and to allow the player to leave the water
+        gravity = .05
+        playerVelocity.terminal_y = 1;
+        playerVelocity.walk_force = .1;
+        playerVelocity.airResistance = .05;
+        underwater = true;
+    }
+
+    if (camera.position.y > (ocean.position.y + .5)) {
+        gravity = 1
+        playerVelocity.terminal_y = 10;
+        playerVelocity.walk_force = 1;
+        playerVelocity.airResistance = .5;
+        underwater = false;
+    }
+
+    //if (camera.position.y < 50) {
+    //    changeSkyColor(0, 0, 0);
+    //} else {
+    //    changeSkyColor(189, 255, 254);
+    //}
+
+    camera.translateX(playerVelocity.x*dt);
+    camera.translateZ(playerVelocity.z*dt);
+
+    camera.position.y = oldCamPos.y;
+
+    for (let v of ['x', 'y', 'z']) {
+        if (playerVelocity[v] > playerVelocity[`terminal_${v}`]) {
+            playerVelocity[v] = playerVelocity[`terminal_${v}`]
+        }
+
+        if (playerVelocity[v] < -playerVelocity[`terminal_${v}`]) {
+            playerVelocity[v] = -playerVelocity[`terminal_${v}`]
+        }
+
+        if (! (v === 'y')) {
+            if (playerVelocity[v] > 0) {
+                playerVelocity[v] -= playerVelocity.airResistance
+            }
+    
+            if (playerVelocity[v] < 0) {
+                playerVelocity[v] += playerVelocity.airResistance
+            }
+        }
+    }
+
+    camera.position.y += playerVelocity.y*dt;
+
+
+    let casts = [
+        // floor corner casts
+        {
+            direction:-1, 
+            offset:[-.4, 0, -.4],
+            length:1.6,
+            axis: 'y'
+        },
+
+        {
+            direction:-1, 
+            offset:[.4, 0, .4],
+            length:1.6,
+            axis: 'y'
+        },
+
+        {
+            direction:-1, 
+            offset:[-.4, 0, .4],
+            length:1.6,
+            axis: 'y'
+        },
+
+        {
+            direction:-1, 
+            offset:[.4, 0, -.4],
+            length:1.6,
+            axis: 'y'
+        },
+
+
+        // ceiling corner casts
+        {
+            direction:1, 
+            offset:[-.4, 0, -.4],
+            length:.4,
+            axis: 'y'
+        },
+
+        {
+            direction:1, 
+            offset:[.4, 0, .4],
+            length:.4,
+            axis: 'y'
+        },
+
+        {
+            direction:1, 
+            offset:[-.4, 0, .4],
+            length:.4,
+            axis: 'y'
+        },
+
+        {
+            direction:1, 
+            offset:[.4, 0, -.4],
+            length:.4,
+            axis: 'y'
+        },
+
+
+
+
+        // lower corner casts
+        {
+            direction:-1, 
+            offset:[0, -1, -.4],
+            length:.4,
+            axis: 'x'
+        },
+
+        {
+            direction:-1, 
+            offset:[0, -1, .4],
+            length:.4,
+            axis: 'x'
+        },
+
+        {
+            direction:1, 
+            offset:[0, -1, -.4],
+            length:.4,
+            axis: 'x'
+        },
+
+        {
+            direction:1, 
+            offset:[0, -1, .4],
+            length:.4,
+            axis: 'x'
+        },
+
+        {
+            direction:-1, 
+            offset:[-.4, -1, 0],
+            length:.4,
+            axis: 'z'
+        },
+
+        {
+            direction:-1, 
+            offset:[.4, -1, 0],
+            length:.4,
+            axis: 'z'
+        },
+
+
+        {
+            direction:1, 
+            offset:[-.4, -1, 0],
+            length:.4,
+            axis: 'z'
+        },
+
+        {
+            direction:1, 
+            offset:[.4, -1, 0],
+            length:.4,
+            axis: 'z'
+        },
+
+
+
+
+
+
+
+        //upper corner casts
+        {
+            direction:-1, 
+            offset:[0, 0, -.4],
+            length:.4,
+            axis: 'x'
+        },
+
+        {
+            direction:-1, 
+            offset:[0, 0, .4],
+            length:.4,
+            axis: 'x'
+        },
+
+        {
+            direction:1, 
+            offset:[0, 0, -.4],
+            length:.4,
+            axis: 'x'
+        },
+
+        {
+            direction:1, 
+            offset:[0, 0, .4],
+            length:.4,
+            axis: 'x'
+        },
+
+        {
+            direction:-1, 
+            offset:[-.4, 0, 0],
+            length:.4,
+            axis: 'z'
+        },
+
+        {
+            direction:-1, 
+            offset:[.4, 0, 0],
+            length:.4,
+            axis: 'z'
+        },
+
+
+        {
+            direction:1, 
+            offset:[-.4, 0, 0],
+            length:.4,
+            axis: 'z'
+        },
+
+        {
+            direction:1, 
+            offset:[.4, 0, 0],
+            length:.4,
+            axis: 'z'
+        },
+    ]
+
+    for (let c of casts) {
+        let vector;
+
+        if (c.axis === 'x') {
+            vector = [c.direction, 0, 0]
+        } else if (c.axis === 'y') {
+            vector = [0, c.direction, 0]
+        } else if (c.axis === 'z') {
+            vector = [0, 0, c.direction]
+        }
+
+        let ray = cast(
+            new THREE.Vector3(camera.position.x+c.offset[0], camera.position.y+c.offset[1], camera.position.z+c.offset[2]), 
+            new THREE.Vector3(vector[0], vector[1], vector[2]), c.length);
+
+        if (ray.length > 0) {
+            if (c.direction === 1) {
+                if (camera.position[c.axis] > oldCamPos[c.axis]) {
+                    camera.position[c.axis] = oldCamPos[c.axis];
+                }
+            }
+
+            if (c.direction === -1) {
+                if (camera.position[c.axis] < oldCamPos[c.axis]) {
+                    camera.position[c.axis] = oldCamPos[c.axis];
+                }
+            }
+
+            if (c.axis === 'y') {
+                playerVelocity.y = 0
+            }
+        }
+    }
+
+    if (underwater) {
+        if (pressedKeys[" "]) {
+            playerVelocity.y += 4
+        }
+    }
+
+    if (pressedKeys[" "]) {
+        if (! underwater) {
+            if ((playerVelocity.y == 0) && getBlock(Math.round(camera.position.x), Math.round(camera.position.y-2), Math.round(camera.position.z))) {
+                playerVelocity.y = 14;
+                //stepSound()
+            }
+        }
+    }
+
+    if (playerVelocity.y > -10) {
+        playerVelocity.y -= gravity;
+    }
+
+    currentChunkX = Math.round(camera.position.x/defaultChunkSize);
+    currentChunkY = Math.round(camera.position.y/defaultChunkSize);
+    currentChunkZ = Math.round(camera.position.z/defaultChunkSize);
 
     renderer.render(scene, camera);
 }

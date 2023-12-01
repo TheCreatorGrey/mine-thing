@@ -5,16 +5,52 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Spiceinajar's Mine Thing</title>
   <style>
-    body { margin: 0; background-color: skyblue; }
+    body { margin: 0; background-color: #bdfffe; }
     canvas { display: block; }
+
+    #hotbar {
+      text-align: center;
+      position: absolute;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .hotbar-item h1 {
+      padding-top: 15px;
+      color: white;
+      font-family: Arial;
+      font-weight: 100;
+      font-size: 15px;
+      word-wrap: normal;
+    }
+
+    .hotbar-item {
+      border: 2px solid grey;
+      display: inline-block;
+      background-color: rgb(0, 0, 0, 0.5);
+      width: 60px;
+      height: 60px;
+    }
   </style>
 </head>
 <body>
-  <img style="position: absolute; top:50%; left:50%; width:20px; height: 20px; transform: translateX(-50%) translateY(-50%); image-rendering: pixelated;" src="https://raw.githubusercontent.com/Spiceinajar/mine-thing/main/assets/textures/crosshair.png" alt="crosshair">
+  <div id="overlay" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0; background-color: rgba(0, 0, 255, 0.5);"></div>
+  <img style="position: absolute; top:50%; left:50%; width:20px; height: 20px; transform: translateX(-50%) translateY(-50%); image-rendering: pixelated;" src="https://cdn.discordapp.com/attachments/1043652794374160385/1149679307690614914/crosshair.png" alt="crosshair">
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="PointerLockControls.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./three/build/three.module.js",
+        "three/addons/": "./three/jsm/"
+      }
+    }
+  </script>
+
+  <div id="hotbar">
+  </div>
+
+  <script type="module" src="game.js"></script>
   <script src="perlin.js"></script>
-  <script src="game.js"></script>
 </body>
 </html>
