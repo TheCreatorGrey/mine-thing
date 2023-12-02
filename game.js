@@ -123,7 +123,7 @@ function startTracks() {
     renderer.domElement.removeEventListener("click", startTracks);
 }
 
-//renderer.domElement.addEventListener("click", startTracks);
+renderer.domElement.addEventListener("click", startTracks);
 
 
 var pressedKeys = {};
