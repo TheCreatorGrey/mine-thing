@@ -161,6 +161,10 @@ const blockIndex = {
     'sand':{UV:[.5, .8], transparent:false, sound:'sand'},
     'water':{UV:[.6, .8], transparent:true, sound:'stone', unbreakable:true},
     'cobble':{UV:[.7, .8], transparent:false, sound:'stone'},
+    'cooled magma':{UV:[.8, .8], transparent:false, sound:'stone'},
+    'hot magma':{UV:[.9, .8], transparent:false, sound:'stone'},
+    'extremely hot magma':{UV:[0, .7], transparent:false, sound:'stone'},
+    'liquid magma':{UV:[.1, .7], transparent:false, sound:'stone'},
 }
 
 const transparentBlocks = [null, 'leaves', 'glass', 'water'];
@@ -286,6 +290,7 @@ function fractalNoise(x, z) {
 let xArray;
 let yArray;
 let zArray;
+let crustDepth = 30000 //I looked up the average continental crust depth in real life and translated it to this (1 block = 1 meter)
 
 var defaultChunkSize = 16;
 var generatedChunks = {};
@@ -353,18 +358,24 @@ async function generateChunk(xLocation, yLocation, zLocation, size=defaultChunkS
                     }
                 }
 
-                if (globalY === -128) {
-                    blockType = 'bedrock'
-                }
+                if (globalY < (noiseval - crustDepth)) {
+                    blockType = 'cooled magma';
 
-                if (globalY === -127) {
-                    if ((Math.random()*2)>1) {
-                        blockType = 'bedrock'
+                    if (noise.perlin3(globalX/10, globalY/10, globalZ/10) > 0) {
+                        blockType = null;
                     }
                 }
 
-                if (globalY < -128) {
-                    blockType = null
+                if (globalY < (noiseval - (crustDepth + 1000))) {
+                    blockType = 'hot magma'
+                }
+
+                if (globalY < (noiseval - (crustDepth + 2000))) {
+                    blockType = 'extremely hot magma'
+                }
+
+                if (globalY < (noiseval - (crustDepth + 3000))) {
+                    blockType = 'liquid magma'
                 }
 
                 //if ((blockType === null) && (globalY < 5)) {
@@ -666,25 +677,25 @@ camera.add(hand);
 scene.add(camera);
 
 
-var waterTexture = textureLoader.load( './assets/water.png', function ( texture ) {
-
-    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.offset.set( 0, 0 );
-    texture.repeat.set( 1000, 1000 );
-    texture.magFilter = THREE.NearestFilter;
-    texture.minFilter = THREE.NearestFilter;
-
-} );
-
-let ocean = new THREE.Mesh(
-    new THREE.PlaneGeometry(1000, 1000), 
-    new THREE.MeshPhongMaterial({ map: waterTexture, side: THREE.DoubleSide, transparent:true, opacity:.8} )
-);
-
-ocean.position.set(0, 4.4, 0);
-ocean.lookAt(new THREE.Vector3(0, 100, 0));
-
-scene.add(ocean)
+//var waterTexture = textureLoader.load( './assets/water.png', function ( texture ) {
+//
+//    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+//    texture.offset.set( 0, 0 );
+//    texture.repeat.set( 1000, 1000 );
+//    texture.magFilter = THREE.NearestFilter;
+//    texture.minFilter = THREE.NearestFilter;
+//
+//} );
+//
+//let ocean = new THREE.Mesh(
+//    new THREE.PlaneGeometry(1000, 1000), 
+//    new THREE.MeshPhongMaterial({ map: waterTexture, side: THREE.DoubleSide, transparent:true, opacity:.8} )
+//);
+//
+//ocean.position.set(0, 4.4, 0);
+//ocean.lookAt(new THREE.Vector3(0, 100, 0));
+//
+//scene.add(ocean)
 
 
 
@@ -918,8 +929,8 @@ function animate() {
         'z':camera.position.z,
     }
 
-    ocean.position.x = Math.round(camera.position.x);
-    ocean.position.z = Math.round(camera.position.z);
+    //ocean.position.x = Math.round(camera.position.x);
+    //ocean.position.z = Math.round(camera.position.z);
 
     if (pressedKeys["w"]) {
         playerVelocity.z -= playerVelocity.walk_force
@@ -943,27 +954,27 @@ function animate() {
 
 
 
-    if (camera.position.y < ocean.position.y) { //the overlay only activates if the player is fully submerged
-        document.getElementById('overlay').style.backgroundColor = 'rgba(0, 50, 255, 0.5)';
-    } else {
-        document.getElementById('overlay').style.backgroundColor = 'rgba(0, 0, 0, 0)';
-    }
+    //if (camera.position.y < ocean.position.y) { //the overlay only activates if the player is fully submerged
+    //    document.getElementById('overlay').style.backgroundColor = 'rgba(0, 50, 255, 0.5)';
+    //} else {
+    //    document.getElementById('overlay').style.backgroundColor = 'rgba(0, 0, 0, 0)';
+    //}
 
-    if (camera.position.y < (ocean.position.y + 1)) { //there is a margin here to create the bobbing effect while swimming, and to allow the player to leave the water
-        gravity = .05
-        playerVelocity.terminal_y = 1;
-        playerVelocity.walk_force = .1;
-        playerVelocity.airResistance = .05;
-        underwater = true;
-    }
+    //if (camera.position.y < (ocean.position.y + 1)) { //there is a margin here to create the bobbing effect while swimming, and to allow the player to leave the water
+    //    gravity = .05
+    //    playerVelocity.terminal_y = 1;
+    //    playerVelocity.walk_force = .1;
+    //    playerVelocity.airResistance = .05;
+    //    underwater = true;
+    //}
 
-    if (camera.position.y > (ocean.position.y + .5)) {
-        gravity = 1
-        playerVelocity.terminal_y = 10;
-        playerVelocity.walk_force = 1;
-        playerVelocity.airResistance = .5;
-        underwater = false;
-    }
+    //if (camera.position.y > (ocean.position.y + .5)) {
+    //    gravity = 1
+    //    playerVelocity.terminal_y = 10;
+    //    playerVelocity.walk_force = 1;
+    //    playerVelocity.airResistance = .5;
+    //    underwater = false;
+    //}
 
     //if (camera.position.y < 50) {
     //    changeSkyColor(0, 0, 0);
