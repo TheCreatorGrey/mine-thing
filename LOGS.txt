@@ -1,0 +1,35 @@
+update 1:
+added shading
+fixed texture blurriness
+added 4 new blocks
+added crosshair
+
+
+update 2:
+fixed player height
+fixed jumping
+significantly improved performance (that isn't to say its not still terrible)
+added automatic chunk loading and unloading
+chunks now reload upon modification
+added trees
+improved terrain generation
+some new blocks
+i removed the shading for performance reasons
+fixed delta time
+
+update 4:
+added music (thanks kevin macleod)
+replaced the block texture
+fixed chunk unloading
+
+update 5:
+made 3d chunks (infinite world height)
+replaced sound effects
+added better textures and more block types
+improved chunk loaders
+
+update 6:
+added block types, ambience, more music
+and the "flesh pit", which is found 400 blocks
+below the surface. Also, bug fixes and other
+small improvements.
