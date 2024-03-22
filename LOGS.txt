@@ -17,16 +17,19 @@ some new blocks
 i removed the shading for performance reasons
 fixed delta time
 
+
 update 4:
 added music (thanks kevin macleod)
 replaced the block texture
 fixed chunk unloading
+
 
 update 5:
 made 3d chunks (infinite world height)
 replaced sound effects
 added better textures and more block types
 improved chunk loaders
+
 
 update 6:
 added block types, ambience, more music

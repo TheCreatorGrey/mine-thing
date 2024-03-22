@@ -2,7 +2,11 @@ import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { blockIndex } from './blockindex.js';
+import { STRUCTURES } from './structures.js';
 
+var worldEntities = [];
 
 var selectedBlock = null;
 const hotbar = document.getElementById('hotbar');
@@ -131,7 +135,7 @@ async function playNextTrack() {
         trackNum = 0
     };
 
-    console.log(tracks[currentDimension], currentDimension, trackNum, tracks[currentDimension][trackNum])
+    //console.log(tracks[currentDimension], currentDimension, trackNum, tracks[currentDimension][trackNum])
 
     aud.src = `./assets/music/${tracks[currentDimension][trackNum]}.mp3`;
     aud.currentTime = 0;
@@ -183,116 +187,8 @@ var pressedKeys = {};
 window.onkeyup = function (e) { pressedKeys[e.key.toLowerCase()] = false; }
 window.onkeydown = function (e) { pressedKeys[e.key.toLowerCase()] = true; }
 
-const blockIndex = {
-    'dirt': { UV: [0, .9], transparent: false, sound: ['dirt'] },
-    'grass': { UV: [.1, .9], transparent: false, sound: ['grass'] },
-    'stone': { UV: [.2, .9], transparent: false, sound: ['stone'] },
-    'bedrock': { UV: [.3, .9], transparent: false, sound: ['stone'], unbreakable: true },
-    'log': { UV: [.4, .9], transparent: false, sound: ['wood', 'stone'] },
-    'leaves': { UV: [.5, .9], transparent: true, sound: ['grass'] },
-    'coal ore': { UV: [.6, .9], transparent: false, sound: ['stone'] },
-    'iron ore': { UV: [.7, .9], transparent: false, sound: ['stone'] },
-    'diamond ore': { UV: [.8, .9], transparent: false, sound: ['stone'] },
-    'gold ore': { UV: [.9, .9], transparent: false, sound: ['stone'] },
-    'ruby ore': { UV: [0, .8], transparent: false, sound: ['stone'] },
-    'sapphire ore': { UV: [.1, .8], transparent: false, sound: ['stone'] },
-    'glass': { UV: [.2, .8], transparent: true, sound: ['stone', 'wood'] },
-    'snow': { UV: [.3, .8], transparent: false, sound: ['dirt'] },
-    'planks': { UV: [.4, .8], transparent: false, sound: ['wood', 'stone'] },
-    'sand': { UV: [.5, .8], transparent: false, sound: ['dirt'] },
-    'water': { UV: [.6, .8], transparent: true, sound: [], unbreakable: true },
-    'cobble': { UV: [.7, .8], transparent: false, sound: ['stone'] },
-    'magma': { UV: [.8, .8], transparent: false, sound: ['stone'] },
-    'lava': { UV: [.9, .8], transparent: false, sound: ['stone'] },
-    'bloodstone': { UV: [0, .7], transparent: false, sound: ['squish', 'stone'] },
-    'bones 1': { UV: [.1, .7], transparent: false, sound: ['squish', 'stone'] },
-    'bones 2': { UV: [.2, .7], transparent: false, sound: ['squish', 'stone'] },
-    'blood': { UV: [.3, .7], transparent: true, sound: [] },
-}
-
-const transparentBlocks = [null, 'leaves', 'glass', 'water'];
-
-
-const TREE = [
-    //log
-    { x: 0, y: 0, z: 0, type: 'log' },
-    { x: 0, y: 1, z: 0, type: 'log' },
-    { x: 0, y: 2, z: 0, type: 'log' },
-    { x: 0, y: 3, z: 0, type: 'log' },
-    { x: 0, y: 4, z: 0, type: 'log' },
-    { x: 0, y: 5, z: 0, type: 'log' },
-
-    //upper tuft
-    { x: 0, y: 6, z: 0, type: 'leaves' },
-    { x: 0, y: 6, z: 1, type: 'leaves' },
-    { x: 0, y: 6, z: -1, type: 'leaves' },
-    { x: 1, y: 6, z: 0, type: 'leaves' },
-    { x: -1, y: 6, z: 0, type: 'leaves' },
-
-    //lower tuft
-    { x: 0, y: 5, z: 1, type: 'leaves' },
-    { x: 0, y: 5, z: -1, type: 'leaves' },
-    { x: 1, y: 5, z: 0, type: 'leaves' },
-    { x: -1, y: 5, z: 0, type: 'leaves' },
-    { x: 1, y: 5, z: 1, type: 'leaves' },
-    { x: -1, y: 5, z: -1, type: 'leaves' },
-    { x: -1, y: 5, z: 1, type: 'leaves' },
-    { x: 1, y: 5, z: -1, type: 'leaves' },
-
-
-    //upper bulk layer
-    { x: 0, y: 4, z: 1, type: 'leaves' },
-    { x: 0, y: 4, z: -1, type: 'leaves' },
-    { x: 1, y: 4, z: 0, type: 'leaves' },
-    { x: -1, y: 4, z: 0, type: 'leaves' },
-    { x: 1, y: 4, z: 1, type: 'leaves' },
-    { x: -1, y: 4, z: -1, type: 'leaves' },
-    { x: -1, y: 4, z: 1, type: 'leaves' },
-    { x: 1, y: 4, z: -1, type: 'leaves' },
-    { x: 2, y: 4, z: -2, type: 'leaves' },
-    { x: -2, y: 4, z: 2, type: 'leaves' },
-    { x: 2, y: 4, z: 2, type: 'leaves' },
-    { x: -2, y: 4, z: -2, type: 'leaves' },
-    { x: 1, y: 4, z: -2, type: 'leaves' },
-    { x: 0, y: 4, z: -2, type: 'leaves' },
-    { x: -1, y: 4, z: -2, type: 'leaves' },
-    { x: 1, y: 4, z: 2, type: 'leaves' },
-    { x: 0, y: 4, z: 2, type: 'leaves' },
-    { x: -1, y: 4, z: 2, type: 'leaves' },
-    { x: 2, y: 4, z: 1, type: 'leaves' },
-    { x: 2, y: 4, z: 0, type: 'leaves' },
-    { x: 2, y: 4, z: -1, type: 'leaves' },
-    { x: -2, y: 4, z: 1, type: 'leaves' },
-    { x: -2, y: 4, z: 0, type: 'leaves' },
-    { x: -2, y: 4, z: -1, type: 'leaves' },
-
-    //lower bulk layer
-    { x: 0, y: 3, z: 1, type: 'leaves' },
-    { x: 0, y: 3, z: -1, type: 'leaves' },
-    { x: 1, y: 3, z: 0, type: 'leaves' },
-    { x: -1, y: 3, z: 0, type: 'leaves' },
-    { x: 1, y: 3, z: 1, type: 'leaves' },
-    { x: -1, y: 3, z: -1, type: 'leaves' },
-    { x: -1, y: 3, z: 1, type: 'leaves' },
-    { x: 1, y: 3, z: -1, type: 'leaves' },
-    { x: 2, y: 3, z: -2, type: 'leaves' },
-    { x: -2, y: 3, z: 2, type: 'leaves' },
-    { x: 2, y: 3, z: 2, type: 'leaves' },
-    { x: -2, y: 3, z: -2, type: 'leaves' },
-    { x: 1, y: 3, z: -2, type: 'leaves' },
-    { x: 0, y: 3, z: -2, type: 'leaves' },
-    { x: -1, y: 3, z: -2, type: 'leaves' },
-    { x: 1, y: 3, z: 2, type: 'leaves' },
-    { x: 0, y: 3, z: 2, type: 'leaves' },
-    { x: -1, y: 3, z: 2, type: 'leaves' },
-    { x: 2, y: 3, z: 1, type: 'leaves' },
-    { x: 2, y: 3, z: 0, type: 'leaves' },
-    { x: 2, y: 3, z: -1, type: 'leaves' },
-    { x: -2, y: 3, z: 1, type: 'leaves' },
-    { x: -2, y: 3, z: 0, type: 'leaves' },
-    { x: -2, y: 3, z: -1, type: 'leaves' },
-]
-
+const transparentBlocks = [null, 'leaves', 'glass', 'water', 'blood'];
+const liquids = ['water', 'blood']
 
 const texture = textureLoader.load(`./assets/atlas.png`);
 texture.magFilter = THREE.NearestFilter;
@@ -325,7 +221,7 @@ function fractalNoise(x, z) {
     noiseval += 0.5 * nv2;
     noiseval += 0.25 * nv3;
     noiseval += 0.125 * nv4;
-    noiseval = Math.round(noiseval) + 50
+    noiseval = Math.round(noiseval) // +50
 
     return noiseval;
 }
@@ -340,7 +236,7 @@ async function generateChunk(xLocation, yLocation, zLocation, size = defaultChun
     xArray = [];
     var bCount = 0;
 
-    let treePositions = [];
+    let newStructures = [];
 
     for (var x = 0; x < size; x++) {
         yArray = [];
@@ -363,7 +259,13 @@ async function generateChunk(xLocation, yLocation, zLocation, size = defaultChun
                     blockType = 'grass'
                     if ((globalY > 8)) {
                         if (randInt(60) === 0) {
-                            treePositions.push([globalX, globalY, globalZ, x, y, z]);
+                            newStructures.push(["tree", globalX, globalY, globalZ]);
+                        } else if (randInt(200) === 0) {
+                            //spawnCow(globalX, globalY+1, globalZ)
+                        } else if (randInt(100000) === 0) {
+                            newStructures.push(["house", globalX, globalY, globalZ]);
+                        } else if (randInt(1000000) === 0) {
+                            newStructures.push(["trap", globalX, globalY, globalZ]);
                         }
                     }
 
@@ -435,6 +337,10 @@ async function generateChunk(xLocation, yLocation, zLocation, size = defaultChun
                         } else {
                             blockType = null;
                         }
+                    } else {
+                        if (randInt(10000) === 0) {
+                            newStructures.push(["ribcage", globalX, globalY, globalZ]);
+                        }
                     }
                 }
 
@@ -458,11 +364,10 @@ async function generateChunk(xLocation, yLocation, zLocation, size = defaultChun
         bCount: bCount
     };
 
-    for (let t in treePositions) {
-        let tr = treePositions[t];
-        for (let b in TREE) {
-            let block = TREE[b];
-            putBlock(block.x + tr[0], block.y + tr[1], block.z + tr[2], block.type)
+    for (let struct of newStructures) {
+        for (let b in STRUCTURES[struct[0]]) {
+            let block = STRUCTURES[struct[0]][b];
+            putBlock(block.x + struct[1], block.y + struct[2], block.z + struct[3], block.type)
         }
     }
 
@@ -753,81 +658,568 @@ scene.add(camera);
 //
 //scene.add(ocean)
 
+//renderer.domElement.onmousedown = function (e) {
+//    const intersects = camCast();
+//
+//    if (intersects.length > 0) {
+//        var point = intersects[0].point;
+//        const normal = intersects[0].face.normal;
+//        const hit = intersects[0].object;
+//
+//        let chunkx;
+//        let chunky;
+//        let chunkz;
+//
+//        switch (e.which) {
+//            case 1:
+//                point.x -= normal.x * .5;
+//                point.y -= normal.y * .5;
+//                point.z -= normal.z * .5;
+//
+//                putBlock(Math.round(point.x), Math.round(point.y), Math.round(point.z), null, true)
+//                playSound('./assets/sfx/destroy.ogg');
+//
+//                break;
+//            case 3:
+//                if (selectedBlock) {
+//                    point.x += normal.x * .5;
+//                    point.y += normal.y * .5;
+//                    point.z += normal.z * .5;
+//
+//                    putBlock(Math.round(point.x), Math.round(point.y), Math.round(point.z), selectedBlock, true)
+//                    playSound('./assets/sfx/place.ogg');
+//
+//                    break;
+//                }
+//        }
+//    }
+//}
+
+//var waterTexture = textureLoader.load( './assets/water.png', function ( texture ) {
+//
+//    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+//    texture.offset.set( 0, 0 );
+//    texture.repeat.set( 1000, 1000 );
+//    texture.magFilter = THREE.NearestFilter;
+//    texture.minFilter = THREE.NearestFilter;
+//
+//} );
+//
+//let ocean = new THREE.Mesh(
+//    new THREE.PlaneGeometry(1000, 1000), 
+//    new THREE.MeshPhongMaterial({ map: waterTexture, side: THREE.DoubleSide, transparent:true, opacity:.8} )
+//);
+//
+//ocean.position.set(0, 4.4, 0);
+//ocean.lookAt(new THREE.Vector3(0, 100, 0));
+//
+//scene.add(ocean)
 
 
-
-renderer.domElement.onmousedown = function (e) {
+function camCast() {
     const raycaster = new THREE.Raycaster();
     const direction = new THREE.Vector3();
 
     camera.getWorldDirection(direction);
     raycaster.set(camera.position, direction);
 
-    const intersects = raycaster.intersectObjects(Object.values(renderedChunks));
+    return raycaster.intersectObjects(Object.values(renderedChunks));
+}
 
-    if (intersects.length > 0) {
-        var point = intersects[0].point;
-        const normal = intersects[0].face.normal;
-        const hit = intersects[0].object;
+renderer.domElement.onmousedown = function (e) {
+    switch (e.which) {
+        case 1:
+            pressedKeys.mouseLeft = true
 
-        let chunkx;
-        let chunky;
-        let chunkz;
+            break;
+        case 3:
+            pressedKeys.mouseRight = true
 
-        switch (e.which) {
-            case 1:
-                point.x -= normal.x * .5;
-                point.y -= normal.y * .5;
-                point.z -= normal.z * .5;
-
-                putBlock(Math.round(point.x), Math.round(point.y), Math.round(point.z), null, true)
-                playSound('./assets/sfx/destroy.ogg');
-
-                break;
-            case 3:
-                if (selectedBlock) {
-                    point.x += normal.x * .5;
-                    point.y += normal.y * .5;
-                    point.z += normal.z * .5;
-
-                    putBlock(Math.round(point.x), Math.round(point.y), Math.round(point.z), selectedBlock, true)
-                    playSound('./assets/sfx/place.ogg');
-
-                    break;
-                }
-        }
+            break;
     }
 }
 
-//function spawnCow(x, y, z) {
-//    let mixer;
-//    const loader = new FBXLoader();
-//    loader.load( 'assets/creatures/cow.fbx', function ( object ) {
-//        //mixer = new THREE.AnimationMixer( object );
-//
-//        //const action = mixer.clipAction( object.animations[ 0 ] );
-//        //action.play();
-//
-//        scene.add( object );
-//        object.scale.set(.02, .02, .02)
-//        object.position.set(new THREE.Vector3(x, y, z))
-//        object.geometry = new THREE.BoxGeometry();
-//    });
-//}
+renderer.domElement.onmouseup = function (e) {
+    switch (e.which) {
+        case 1:
+            pressedKeys.mouseLeft = false
+
+            break;
+        case 3:
+            pressedKeys.mouseRight = false
+
+            break;
+    }
+}
+
+
+
+var gravity = 1;
+
+class Entity {
+    constructor(obj, height=1.6) {
+        this.object = obj;
+
+        this.casts = [
+            // floor corner casts
+            {
+                direction: -1,
+                offset: [-.4, 0, -.4],
+                length: height,
+                axis: 'y'
+            },
+        
+            {
+                direction: -1,
+                offset: [.4, 0, .4],
+                length: height,
+                axis: 'y'
+            },
+        
+            {
+                direction: -1,
+                offset: [-.4, 0, .4],
+                length: height,
+                axis: 'y'
+            },
+        
+            {
+                direction: -1,
+                offset: [.4, 0, -.4],
+                length: height,
+                axis: 'y'
+            },
+        
+        
+            // ceiling corner casts
+            {
+                direction: 1,
+                offset: [-.4, 0, -.4],
+                length: .4,
+                axis: 'y'
+            },
+        
+            {
+                direction: 1,
+                offset: [.4, 0, .4],
+                length: .4,
+                axis: 'y'
+            },
+        
+            {
+                direction: 1,
+                offset: [-.4, 0, .4],
+                length: .4,
+                axis: 'y'
+            },
+        
+            {
+                direction: 1,
+                offset: [.4, 0, -.4],
+                length: .4,
+                axis: 'y'
+            },
+        
+        
+        
+        
+            // lower corner casts
+            {
+                direction: -1,
+                offset: [0, -1, -.4],
+                length: .4,
+                axis: 'x'
+            },
+        
+            {
+                direction: -1,
+                offset: [0, -1, .4],
+                length: .4,
+                axis: 'x'
+            },
+        
+            {
+                direction: 1,
+                offset: [0, -1, -.4],
+                length: .4,
+                axis: 'x'
+            },
+        
+            {
+                direction: 1,
+                offset: [0, -1, .4],
+                length: .4,
+                axis: 'x'
+            },
+        
+            {
+                direction: -1,
+                offset: [-.4, -1, 0],
+                length: .4,
+                axis: 'z'
+            },
+        
+            {
+                direction: -1,
+                offset: [.4, -1, 0],
+                length: .4,
+                axis: 'z'
+            },
+        
+        
+            {
+                direction: 1,
+                offset: [-.4, -1, 0],
+                length: .4,
+                axis: 'z'
+            },
+        
+            {
+                direction: 1,
+                offset: [.4, -1, 0],
+                length: .4,
+                axis: 'z'
+            },
+        
+        
+        
+        
+        
+        
+        
+            //upper corner casts
+            {
+                direction: -1,
+                offset: [0, 0, -.4],
+                length: .4,
+                axis: 'x'
+            },
+        
+            {
+                direction: -1,
+                offset: [0, 0, .4],
+                length: .4,
+                axis: 'x'
+            },
+        
+            {
+                direction: 1,
+                offset: [0, 0, -.4],
+                length: .4,
+                axis: 'x'
+            },
+        
+            {
+                direction: 1,
+                offset: [0, 0, .4],
+                length: .4,
+                axis: 'x'
+            },
+        
+            {
+                direction: -1,
+                offset: [-.4, 0, 0],
+                length: .4,
+                axis: 'z'
+            },
+        
+            {
+                direction: -1,
+                offset: [.4, 0, 0],
+                length: .4,
+                axis: 'z'
+            },
+        
+        
+            {
+                direction: 1,
+                offset: [-.4, 0, 0],
+                length: .4,
+                axis: 'z'
+            },
+        
+            {
+                direction: 1,
+                offset: [.4, 0, 0],
+                length: .4,
+                axis: 'z'
+            },
+        ]
+
+        this.velocity = {
+            x: 0,
+            y: 0,
+            z: 0,
+            terminal_x: 5,
+            terminal_y: 20,
+            terminal_z: 5,
+            airResistance: .5,
+            walk_force: 1
+        }
+
+        this.attemptedVelocity = {
+            for:false,
+            back:false,
+            left:false,
+            right:false,
+            running:false,
+            jumping:false
+        }
+
+        this.underwater = false;
+
+        this.id = worldEntities.length;
+        worldEntities.push(this);
+        this.onupdate = null;
+    }
+
+    update() {
+        let oldPos = {
+            'x': this.object.position.x,
+            'y': this.object.position.y,
+            'z': this.object.position.z,
+        }
+    
+        if (this.attemptedVelocity.for) {
+            this.velocity.z -= this.velocity.walk_force
+        }
+        if (this.attemptedVelocity.back) {
+            this.velocity.z += this.velocity.walk_force
+        }
+        if (this.attemptedVelocity.left) {
+            this.velocity.x -= this.velocity.walk_force
+        }
+        if (this.attemptedVelocity.right) {
+            this.velocity.x += this.velocity.walk_force
+        }
+    
+        if (this.attemptedVelocity.running) {
+            this.velocity[`terminal_z`] = 8
+        } else {
+            this.velocity[`terminal_z`] = 4
+        }
+    
+    
+    
+    
+        //if (this.object.position.y < ocean.position.y) { //the overlay only activates if the player is fully submerged
+        //    document.getElementById('overlay').style.backgroundColor = 'rgba(0, 50, 255, 0.5)';
+        //} else {
+        //    document.getElementById('overlay').style.backgroundColor = 'rgba(0, 0, 0, 0)';
+        //}
+    
+        //if (this.object.position.y < (ocean.position.y + 1)) { //there is a margin here to create the bobbing effect while swimming, and to allow the player to leave the water
+        //    gravity = .05
+        //    this.velocity.terminal_y = 1;
+        //    this.velocity.walk_force = .1;
+        //    this.velocity.airResistance = .05;
+        //    underwater = true;
+        //}
+    
+        //if (this.object.position.y > (ocean.position.y + .5)) {
+        //    gravity = 1
+        //    this.velocity.terminal_y = 10;
+        //    this.velocity.walk_force = 1;
+        //    this.velocity.airResistance = .5;
+        //    underwater = false;
+        //}
+    
+        this.object.translateX(this.velocity.x * dt);
+        this.object.translateZ(this.velocity.z * dt);
+    
+        this.object.position.y = oldPos.y;
+    
+        for (let v of ['x', 'y', 'z']) {
+            if (this.velocity[v] > this.velocity[`terminal_${v}`]) {
+                this.velocity[v] = this.velocity[`terminal_${v}`]
+            }
+    
+            if (this.velocity[v] < -this.velocity[`terminal_${v}`]) {
+                this.velocity[v] = -this.velocity[`terminal_${v}`]
+            }
+    
+            if (!(v === 'y')) {
+                if (this.velocity[v] > 0) {
+                    this.velocity[v] -= this.velocity.airResistance
+                }
+    
+                if (this.velocity[v] < 0) {
+                    this.velocity[v] += this.velocity.airResistance
+                }
+            }
+        }
+    
+        this.object.position.y += this.velocity.y * dt;
+    
+    
+        for (let c of this.casts) {
+            let vector;
+    
+            if (c.axis === 'x') {
+                vector = [c.direction, 0, 0]
+            } else if (c.axis === 'y') {
+                vector = [0, c.direction, 0]
+            } else if (c.axis === 'z') {
+                vector = [0, 0, c.direction]
+            }
+    
+            let ray = cast(
+                new THREE.Vector3(this.object.position.x + c.offset[0], this.object.position.y + c.offset[1], this.object.position.z + c.offset[2]),
+                new THREE.Vector3(vector[0], vector[1], vector[2]), c.length);
+    
+            if (ray.length > 0) {
+                let fp = ray[0].point;
+                const normal = ray[0].face.normal;
+        
+                fp.x -= normal.x * .5;
+                fp.y -= normal.y * .5;
+                fp.z -= normal.z * .5;
+
+                let fb = getBlock(
+                    Math.round(fp.x),
+                    Math.round(fp.y),
+                    Math.round(fp.z)
+                );
+                
+                if (! (liquids.includes(fb))) {
+                    if (c.direction === 1) {
+                        if (this.object.position[c.axis] > oldPos[c.axis]) {
+                            this.object.position[c.axis] = oldPos[c.axis];
+                        }
+                    }
+        
+                    if (c.direction === -1) {
+                        if (this.object.position[c.axis] < oldPos[c.axis]) {
+                            this.object.position[c.axis] = oldPos[c.axis];
+                        }
+                    }
+        
+                    if (c.axis === 'y') {
+                        this.velocity.y = 0
+                    }
+                }
+            }
+        }
+    
+        if (this.underwater) {
+            if (this.attemptedVelocity.jumping) {
+                this.velocity.y += 4
+            }
+        }
+    
+        if (this.attemptedVelocity.jumping) {
+            if (!this.underwater) {
+                if ((this.velocity.y == 0) && getBlock(Math.round(this.object.position.x), Math.round(this.object.position.y - 2), Math.round(this.object.position.z))) {
+                    this.velocity.y = 14;
+                    //stepSound()
+                }
+            }
+        }
+    
+        this.velocity.y -= gravity;
+
+        if (this.onupdate) {
+            this.onupdate()
+        }
+    }
+
+    destroy() {
+        worldEntities.splice(worldEntities.indexOf(this), 1);
+    }
+}
+
+let playerPhys = new Entity(camera);
+
+
+
+
+class Creature {
+    constructor(type, x, y, z) {
+        const loader = new GLTFLoader();
+        loader.load( `assets/creatures/${type}.glb`, ( object ) => {
+            scene.add( object.scene );
+            //object.position.set(new THREE.Vector3(x, y, z))
+    
+            this.mixer = new THREE.AnimationMixer( object.scene );
+            
+            object.animations.forEach( ( clip ) => {
+                let c = this.mixer.clipAction( clip );
+                c.loop = THREE.LoopRepeat;
+                c.play();
+            } );
+    
+            let base = object.scene.children[0];
+            this.entity = new Entity(base);
+            this.entity.velocity.terminal_z = .01
+    
+            base.position.x = (x)
+            base.position.y = (y)
+            base.position.z = (z)
+            base.scale.x = .5
+            base.scale.y = .5
+            base.scale.z = .5
+
+            worldEntities.push(this);
+    
+            //base.rotation.y = randInt()
+
+            stepSound(true, this.entity)
+        });
+    }
+
+    update() {
+        this.entity.attemptedVelocity.for = true;
+        //this.entity.attemptedVelocity.jumping = true;
+        //base.rotation.y += randInt()
+
+        //object.scene.getObjectByName( "head" ).lookAt(camera.position)
+        this.mixer.update(dt);
+    }
+}
+
+setInterval(function() {
+    for (let e of worldEntities) {
+        if (e) {
+            e.update()
+        }
+    }
+}, 10)
 
 let spawnX = (Math.random() - .5) * 100;
 let spawnZ = (Math.random() - .5) * 100;
 camera.position.set(spawnX, fractalNoise(spawnX, spawnZ) + 2, spawnZ);
 
-var playerVelocity = {
-    x: 0,
-    y: 0,
-    z: 0,
-    terminal_x: 5,
-    terminal_y: 20,
-    terminal_z: 5,
-    airResistance: .5,
-    walk_force: 1
+new Creature('cow', camera.position.x, camera.position.y, camera.position.z);
+
+
+class itemDrop {
+    constructor(x, y, z) {
+        this.material = new THREE.MeshLambertMaterial({ color: 0xffd487 });
+        this.object = new THREE.Mesh(new THREE.BoxGeometry(.25, .25, .25), handMat);
+        scene.add(this.object)
+        this.object.position.set(x, y, z);
+
+        this.entity = new Entity(this.object, .25);
+        this.entity.onupdate = this.update;
+    }
+
+    update() {
+        this.object.rotation.y += dt;
+
+        let d = calculateDistance(
+            [camera.position.x, camera.position.y, camera.position.z],
+            [this.object.position.x, this.object.position.y, this.object.position.z]
+        );
+
+        if (d < 2) {
+            this.entity.destroy();
+            this.entity = null;
+            //this.entity = null;
+            
+            scene.remove(this.object);
+            delete this;
+        }
+    }
 }
 
 //makes a raycast
@@ -954,8 +1346,8 @@ let currentChunkZ;
 chunkLoader();
 
 let stepTimeout = 1;
-async function stepSound(loop = false) {
-    let speed = (Math.abs(playerVelocity.x + playerVelocity.z) * 10) + 500;
+async function stepSound(loop = false, entity) {
+    let speed = (Math.abs(entity.velocity.x + entity.velocity.z) * 10) + 500;
     speed = (1000 - speed)
     if (speed > 10) {
         stepTimeout = speed
@@ -964,12 +1356,12 @@ async function stepSound(loop = false) {
     }
 
     let ground = getBlock(
-        Math.round(camera.position.x),
-        Math.round(camera.position.y - 2),
-        Math.round(camera.position.z)
+        Math.round(entity.object.position.x),
+        Math.round(entity.object.position.y - 2),
+        Math.round(entity.object.position.z)
     )
 
-    if (ground && (!underwater)) {
+    if (ground && (!entity.underwater)) {
         let ranges = {
             'grass': {range:6, volume:.5},
             'dirt': {range:3, volume:1},
@@ -978,7 +1370,7 @@ async function stepSound(loop = false) {
             'squish': {range:4, volume:1}
         }
 
-        if (!(playerVelocity.z === 0)) {
+        if (!(entity.velocity.z === 0)) {
             for (let i of blockIndex[ground].sound) { //for sound combos
                 playSound(`./assets/sfx/step/new/${i}${Math.ceil(Math.random() * ranges[i].range)}.wav`, ranges[i].volume);
             }
@@ -987,12 +1379,12 @@ async function stepSound(loop = false) {
 
     if (loop) {
         setTimeout(() => {
-            stepSound(true)
+            stepSound(true, entity)
         }, stepTimeout);
     }
 }
 
-stepSound(true)
+stepSound(true, playerPhys);
 
 addEventListener("keyup", (e) => {
     for (let i of [1, 2, 3, 4, 5, 6, 7, 8, 9]) {
@@ -1002,336 +1394,92 @@ addEventListener("keyup", (e) => {
     }
 });
 
-var gravity = 1;
-var underwater = false;
-let oldCamPos;
+const cursortexture = textureLoader.load(`./assets/break.png`);
+cursortexture.magFilter = THREE.NearestFilter;
+cursortexture.minFilter = THREE.NearestFilter;
+cursortexture.repeat.set(1, .1);
+//texture.needsUpdate = true;
+
+let cursor = new THREE.Mesh(new THREE.BoxGeometry(1.01, 1.01, 1.01), new THREE.MeshLambertMaterial({ map: cursortexture, transparent:true }));
+scene.add(cursor);
 
 //epic loop
 var dt;
+var breakTicks = 100;
+var breakProgress = breakTicks;
+var prevCursorPos = {x:0,y:0,z:0};
+
 function animate() {
     dt = clock.getDelta();
 
     requestAnimationFrame(animate);
 
-    oldCamPos = {
-        'x': camera.position.x,
-        'y': camera.position.y,
-        'z': camera.position.z,
+    let cursCast = camCast();
+    if (cursCast.length > 0) {
+        var point = cursCast[0].point;
+        const normal = cursCast[0].face.normal;
+        const hit = cursCast[0].object;
+
+        point.x -= normal.x * .5;
+        point.y -= normal.y * .5;
+        point.z -= normal.z * .5;
+
+        cursor.position.set(
+            Math.round(point.x),
+            Math.round(point.y),
+            Math.round(point.z),
+        );
     }
 
-    //ocean.position.x = Math.round(camera.position.x);
-    //ocean.position.z = Math.round(camera.position.z);
+    cursortexture.offset.set(0, (Math.round((breakProgress/breakTicks)*10)/10)-.1);
+
+    if (pressedKeys.mouseLeft) {
+        breakProgress -= 100*dt;
+
+        if (breakProgress < 0) {
+            breakProgress = breakTicks;
+            putBlock(Math.round(cursor.position.x), Math.round(cursor.position.y), Math.round(cursor.position.z), null, true);
+            //new itemDrop(cursor.position.x, cursor.position.y, cursor.position.z);
+            playSound('./assets/sfx/destroy.ogg');
+        }
+    } else {
+        breakProgress = breakTicks
+    }
 
     if (pressedKeys["w"]) {
-        playerVelocity.z -= playerVelocity.walk_force
+        playerPhys.attemptedVelocity.for = true
+    } else {
+        playerPhys.attemptedVelocity.for = false
     }
     if (pressedKeys["s"]) {
-        playerVelocity.z += playerVelocity.walk_force
+        playerPhys.attemptedVelocity.back = true
+    } else {
+        playerPhys.attemptedVelocity.back = false
     }
     if (pressedKeys["a"]) {
-        playerVelocity.x -= playerVelocity.walk_force
+        playerPhys.attemptedVelocity.left = true
+    } else {
+        playerPhys.attemptedVelocity.left = false
     }
     if (pressedKeys["d"]) {
-        playerVelocity.x += playerVelocity.walk_force
-    }
-
-    if (pressedKeys["shift"]) { // i think its a little stupid that minecraft uses double tap W to run instead of the standard shift, so im changing that
-        playerVelocity[`terminal_z`] = 8
+        playerPhys.attemptedVelocity.right = true
     } else {
-        playerVelocity[`terminal_z`] = 4
-    }
-
-
-
-
-    //if (camera.position.y < ocean.position.y) { //the overlay only activates if the player is fully submerged
-    //    document.getElementById('overlay').style.backgroundColor = 'rgba(0, 50, 255, 0.5)';
-    //} else {
-    //    document.getElementById('overlay').style.backgroundColor = 'rgba(0, 0, 0, 0)';
-    //}
-
-    //if (camera.position.y < (ocean.position.y + 1)) { //there is a margin here to create the bobbing effect while swimming, and to allow the player to leave the water
-    //    gravity = .05
-    //    playerVelocity.terminal_y = 1;
-    //    playerVelocity.walk_force = .1;
-    //    playerVelocity.airResistance = .05;
-    //    underwater = true;
-    //}
-
-    //if (camera.position.y > (ocean.position.y + .5)) {
-    //    gravity = 1
-    //    playerVelocity.terminal_y = 10;
-    //    playerVelocity.walk_force = 1;
-    //    playerVelocity.airResistance = .5;
-    //    underwater = false;
-    //}
-
-    camera.translateX(playerVelocity.x * dt);
-    camera.translateZ(playerVelocity.z * dt);
-
-    camera.position.y = oldCamPos.y;
-
-    for (let v of ['x', 'y', 'z']) {
-        if (playerVelocity[v] > playerVelocity[`terminal_${v}`]) {
-            playerVelocity[v] = playerVelocity[`terminal_${v}`]
-        }
-
-        if (playerVelocity[v] < -playerVelocity[`terminal_${v}`]) {
-            playerVelocity[v] = -playerVelocity[`terminal_${v}`]
-        }
-
-        if (!(v === 'y')) {
-            if (playerVelocity[v] > 0) {
-                playerVelocity[v] -= playerVelocity.airResistance
-            }
-
-            if (playerVelocity[v] < 0) {
-                playerVelocity[v] += playerVelocity.airResistance
-            }
-        }
-    }
-
-    camera.position.y += playerVelocity.y * dt;
-
-    chkAmbience();
-
-
-    let casts = [
-        // floor corner casts
-        {
-            direction: -1,
-            offset: [-.4, 0, -.4],
-            length: 1.6,
-            axis: 'y'
-        },
-
-        {
-            direction: -1,
-            offset: [.4, 0, .4],
-            length: 1.6,
-            axis: 'y'
-        },
-
-        {
-            direction: -1,
-            offset: [-.4, 0, .4],
-            length: 1.6,
-            axis: 'y'
-        },
-
-        {
-            direction: -1,
-            offset: [.4, 0, -.4],
-            length: 1.6,
-            axis: 'y'
-        },
-
-
-        // ceiling corner casts
-        {
-            direction: 1,
-            offset: [-.4, 0, -.4],
-            length: .4,
-            axis: 'y'
-        },
-
-        {
-            direction: 1,
-            offset: [.4, 0, .4],
-            length: .4,
-            axis: 'y'
-        },
-
-        {
-            direction: 1,
-            offset: [-.4, 0, .4],
-            length: .4,
-            axis: 'y'
-        },
-
-        {
-            direction: 1,
-            offset: [.4, 0, -.4],
-            length: .4,
-            axis: 'y'
-        },
-
-
-
-
-        // lower corner casts
-        {
-            direction: -1,
-            offset: [0, -1, -.4],
-            length: .4,
-            axis: 'x'
-        },
-
-        {
-            direction: -1,
-            offset: [0, -1, .4],
-            length: .4,
-            axis: 'x'
-        },
-
-        {
-            direction: 1,
-            offset: [0, -1, -.4],
-            length: .4,
-            axis: 'x'
-        },
-
-        {
-            direction: 1,
-            offset: [0, -1, .4],
-            length: .4,
-            axis: 'x'
-        },
-
-        {
-            direction: -1,
-            offset: [-.4, -1, 0],
-            length: .4,
-            axis: 'z'
-        },
-
-        {
-            direction: -1,
-            offset: [.4, -1, 0],
-            length: .4,
-            axis: 'z'
-        },
-
-
-        {
-            direction: 1,
-            offset: [-.4, -1, 0],
-            length: .4,
-            axis: 'z'
-        },
-
-        {
-            direction: 1,
-            offset: [.4, -1, 0],
-            length: .4,
-            axis: 'z'
-        },
-
-
-
-
-
-
-
-        //upper corner casts
-        {
-            direction: -1,
-            offset: [0, 0, -.4],
-            length: .4,
-            axis: 'x'
-        },
-
-        {
-            direction: -1,
-            offset: [0, 0, .4],
-            length: .4,
-            axis: 'x'
-        },
-
-        {
-            direction: 1,
-            offset: [0, 0, -.4],
-            length: .4,
-            axis: 'x'
-        },
-
-        {
-            direction: 1,
-            offset: [0, 0, .4],
-            length: .4,
-            axis: 'x'
-        },
-
-        {
-            direction: -1,
-            offset: [-.4, 0, 0],
-            length: .4,
-            axis: 'z'
-        },
-
-        {
-            direction: -1,
-            offset: [.4, 0, 0],
-            length: .4,
-            axis: 'z'
-        },
-
-
-        {
-            direction: 1,
-            offset: [-.4, 0, 0],
-            length: .4,
-            axis: 'z'
-        },
-
-        {
-            direction: 1,
-            offset: [.4, 0, 0],
-            length: .4,
-            axis: 'z'
-        },
-    ]
-
-    for (let c of casts) {
-        let vector;
-
-        if (c.axis === 'x') {
-            vector = [c.direction, 0, 0]
-        } else if (c.axis === 'y') {
-            vector = [0, c.direction, 0]
-        } else if (c.axis === 'z') {
-            vector = [0, 0, c.direction]
-        }
-
-        let ray = cast(
-            new THREE.Vector3(camera.position.x + c.offset[0], camera.position.y + c.offset[1], camera.position.z + c.offset[2]),
-            new THREE.Vector3(vector[0], vector[1], vector[2]), c.length);
-
-        if (ray.length > 0) {
-            if (c.direction === 1) {
-                if (camera.position[c.axis] > oldCamPos[c.axis]) {
-                    camera.position[c.axis] = oldCamPos[c.axis];
-                }
-            }
-
-            if (c.direction === -1) {
-                if (camera.position[c.axis] < oldCamPos[c.axis]) {
-                    camera.position[c.axis] = oldCamPos[c.axis];
-                }
-            }
-
-            if (c.axis === 'y') {
-                playerVelocity.y = 0
-            }
-        }
-    }
-
-    if (underwater) {
-        if (pressedKeys[" "]) {
-            playerVelocity.y += 4
-        }
+        playerPhys.attemptedVelocity.right = false
     }
 
     if (pressedKeys[" "]) {
-        if (!underwater) {
-            if ((playerVelocity.y == 0) && getBlock(Math.round(camera.position.x), Math.round(camera.position.y - 2), Math.round(camera.position.z))) {
-                playerVelocity.y = 14;
-                //stepSound()
-            }
-        }
+        playerPhys.attemptedVelocity.jumping = true
+    } else {
+        playerPhys.attemptedVelocity.jumping = false
     }
 
-    playerVelocity.y -= gravity;
+    if (pressedKeys["shift"]) { // i think its a little stupid that minecraft uses double tap W to run instead of the standard shift, so im changing that
+        playerPhys.attemptedVelocity.running = true
+    } else {
+        playerPhys.attemptedVelocity.running = false
+    }
+
+    chkAmbience();
 
     currentChunkX = Math.floor(camera.position.x / defaultChunkSize);
     currentChunkY = Math.floor(camera.position.y / defaultChunkSize);
