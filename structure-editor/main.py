@@ -1,4 +1,4 @@
-from ursina import Ursina, ButtonList, Entity, EditorCamera, color, Func, mouse, destroy, Vec2, scene, PointLight
+from ursina import Ursina, ButtonList, Entity, EditorCamera, color, Func, mouse, destroy, Vec2, scene, PointLight, Vec3
 from ursina.shaders import lit_with_shadows_shader
 import json, os, sys
 
@@ -33,17 +33,22 @@ def input(key):
     if key == "escape":
         sys.exit()
     if key == "e":
-        structure = []
+        structure = {}
         for e in scene.children:
             hasattr(e, 'isBlock')
             if (hasattr(e, 'isBlock')):
-                structure.append({'x': round(e.x), 'y': round(e.y), 'z': round(e.z), 'type': e.bltype})
+                structure[f"{round(e.x)}/{round(e.y)}/{round(e.z)}"] = ({'x': round(e.x), 'y': round(e.y), 'z': round(e.z), 'type': e.bltype})
         
         print(structure)
 
     if key == "right mouse down":
         if (mouse.hovered_entity):
-            point = round(mouse.world_point + (mouse.normal*.6))
+            point = mouse.world_point + (mouse.normal*.6)
+            point = Vec3(
+                round(point.x),
+                round(point.y),
+                round(point.z)
+            )
             
             uvs = blockindex[selectedType]['UV']
             cube = Entity(model='cube', collider='box', position=point, texture='../assets/atlas.png', texture_scale=Vec2(.1, .1), texture_offset=(uvs[0], uvs[1]), bltype=selectedType, isBlock=True)
