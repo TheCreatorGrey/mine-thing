@@ -13,9 +13,9 @@ let currentChunkX;
 let currentChunkY;
 let currentChunkZ;
 
-export let renderDistX = 3;
-export let renderDistY = 3;
-export let renderDistZ = 3;
+export let renderDistX = 2;
+export let renderDistY = 2;
+export let renderDistZ = 2;
 
 export let surrounding = [];
 export var defaultChunkSize = 8;
@@ -42,7 +42,7 @@ export function setChunks(value) {
     generatedChunks = value
 }
 
-export async function generateChunk(xLocation, yLocation, zLocation, size = defaultChunkSize) {
+export async function generateChunk(xLocation, yLocation, zLocation, size = defaultChunkSize, superflat=false) {
     xArray = [];
     var bCount = 0;
 
@@ -57,7 +57,12 @@ export async function generateChunk(xLocation, yLocation, zLocation, size = defa
                 let globalY = y + (yLocation * size);
                 let globalZ = z + (zLocation * size);
 
-                let noiseval = fractalNoise(globalX, globalZ);
+                let noiseval;
+                if (superflat) {
+                    noiseval = 8
+                } else {
+                    noiseval = fractalNoise(globalX, globalZ);
+                }
 
                 var blockType = getIndexOf('air');
 
@@ -415,7 +420,11 @@ export function putBlock(x, y, z, type, reload = false) {
     }
 }
 
-export function getBlock(x, y, z) {
+export function getBlock(approxX, approxY, approxZ) {
+    let x = Math.round(approxX);
+    let y = Math.round(approxY);
+    let z = Math.round(approxZ);
+
     let chunkPos = {
         x: Math.floor(x / defaultChunkSize),
         y: Math.floor(y / defaultChunkSize),

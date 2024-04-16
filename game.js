@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { blockIndex } from './blockindex.js';
-import { Entity, worldEntities } from './entities.js';
+import { Entity, worldEntities, translate } from './entities.js';
 import { getBlock, putBlock, defaultChunkSize, blocktex, texture, chunkLoader, renderedChunks, renderDistX, generatedChunks, setChunks } from './chunker.js';
 import { playSound, fractalNoise, textureLoader, calculateDistance, download } from './utils.js';
 import { scene, camera, clock, renderer } from './scn.js';
 import { chkAmbience } from './ambience.js';
 import { switchHotbor, paused, selectedItem, hotbarSelectedIndex, handMat, inventory, reloadHotBar, setInventory } from './gui.js';
+import { FirstPersonControls } from 'three/addons/controls/FirstPersonControls.js';
 
 
 let ls_save = localStorage.getItem("VXLS_save");
@@ -18,15 +19,23 @@ if (ls_save) {
 
     setInventory(ls_save.player.inventory);
 
-    camera.position.x = ls_save.player.x
-    camera.position.y = ls_save.player.y
-    camera.position.z = ls_save.player.z
+    camera.position.set(
+        ls_save.player.x,
+        ls_save.player.y,
+        ls_save.player.z
+    )
+
+    camera.rotation.set(
+        ls_save.player.rox,
+        ls_save.player.roy,
+        ls_save.player.roz
+    )
 } else {
     console.log("no save")
 
     let spawnX = (Math.random() - .5) * 100;
     let spawnZ = (Math.random() - .5) * 100;
-    camera.position.set(0, fractalNoise(0, 0) + 2, 0);
+    camera.position.set(0, fractalNoise(spawnX, spawnZ)+10, 0);
 }
 
 
@@ -150,7 +159,10 @@ renderer.domElement.onmouseup = function (e) {
     }
 }
 
-let playerPhys = new Entity(camera)
+
+let player = new THREE.Mesh(new THREE.BoxGeometry(.6, 1.6, .6), handMat);
+player.position.set(0, 6, 0)
+let playerPhys = new Entity(player);
 
 class itemDrop {
     constructor(x, y, z) {
@@ -182,7 +194,7 @@ class itemDrop {
     }
 }
 
-scene.fog = new THREE.Fog(0xbdfffe, (renderDistX * defaultChunkSize) / 2, renderDistX * defaultChunkSize);
+scene.fog = new THREE.Fog(0xbdfffe, ((renderDistX * defaultChunkSize) / 2)-10, (renderDistX * defaultChunkSize) / 2);
 
 let oldCamX;
 let oldCamY;
@@ -200,12 +212,12 @@ async function stepSound(loop = false, entity) {
     }
 
     let ground = getBlock(
-        Math.round(entity.object.position.x),
-        Math.round(entity.object.position.y - 2),
-        Math.round(entity.object.position.z)
+        entity.object.position.x,
+        entity.object.position.y - 2,
+        entity.object.position.z
     )
 
-    if (ground && (!entity.underwater)) {
+    if (ground) {
         let ranges = {
             'grass': {range:6, volume:.5},
             'dirt': {range:3, volume:1},
@@ -314,6 +326,18 @@ function animate() {
                 e.update(dt)
             }
         }
+
+        camera.position.set(
+            player.position.x,
+            player.position.y+.6,
+            player.position.z
+        )
+
+        player.rotation.set(
+            camera.rotation.x,
+            camera.rotation.y,
+            camera.rotation.z
+        )
     
         let cursCast = camCast();
         if (cursCast.length > 0) {
@@ -332,7 +356,7 @@ function animate() {
             );
         }
         
-        hoveredBlock = getBlock(Math.round(cursor.position.x), Math.round(cursor.position.y), Math.round(cursor.position.z));
+        hoveredBlock = getBlock(cursor.position.x, cursor.position.y, cursor.position.z);
         breakTicks = blockIndex[hoveredBlock].strength;
         cursortexture.offset.set(0, (Math.round((breakProgress/breakTicks)*10)/10)-.1);
         

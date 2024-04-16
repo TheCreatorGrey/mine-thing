@@ -45,4 +45,4 @@ export function getIndexOf(name) {
 }
 
 export const transparentBlocks = [getIndexOf('air'), getIndexOf('leaves'), getIndexOf('glass'), getIndexOf('water'), getIndexOf('blood')];
-export const liquids = [getIndexOf('water'), getIndexOf('blood')]
+export const liquids = [getIndexOf('water'), getIndexOf('blood'), getIndexOf('air')]
