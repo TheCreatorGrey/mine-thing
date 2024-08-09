@@ -10,6 +10,7 @@ import { switchHotbor, paused, selectedItem, hotbarSelectedIndex, handMat, inven
 import { FirstPersonControls } from 'three/addons/controls/FirstPersonControls.js';
 
 
+let spawnPos = new THREE.Vector3(0, 0, 0);
 let ls_save = localStorage.getItem("VXLS_save");
 if (ls_save) {
     ls_save = JSON.parse(ls_save)
@@ -19,7 +20,7 @@ if (ls_save) {
 
     setInventory(ls_save.player.inventory);
 
-    camera.position.set(
+    spawnPos.set(
         ls_save.player.x,
         ls_save.player.y,
         ls_save.player.z
@@ -35,7 +36,7 @@ if (ls_save) {
 
     let spawnX = (Math.random() - .5) * 100;
     let spawnZ = (Math.random() - .5) * 100;
-    camera.position.set(0, fractalNoise(spawnX, spawnZ)+10, 0);
+    spawnPos.set(0, fractalNoise(spawnX, spawnZ)+10, 0);
 }
 
 
@@ -161,7 +162,7 @@ renderer.domElement.onmouseup = function (e) {
 
 
 let player = new THREE.Mesh(new THREE.BoxGeometry(.6, 1.6, .6), handMat);
-player.position.set(0, 6, 0)
+player.position.copy(spawnPos)
 let playerPhys = new Entity(player);
 
 class itemDrop {
@@ -194,8 +195,6 @@ class itemDrop {
     }
 }
 
-scene.fog = new THREE.Fog(0xbdfffe, ((renderDistX * defaultChunkSize) / 2)-10, (renderDistX * defaultChunkSize) / 2);
-
 let oldCamX;
 let oldCamY;
 let oldCamZ;
@@ -226,7 +225,9 @@ async function stepSound(loop = false, entity) {
             'squish': {range:4, volume:1}
         }
 
-        if (!(entity.velocity.z === 0)) {
+        console.log(entity.velocity.z)
+
+        if (entity.attemptedVelocity.for || entity.attemptedVelocity.back || entity.attemptedVelocity.left || entity.attemptedVelocity.right) {
             for (let i of blockIndex[ground].sound) { //for sound combos
                 playSound(`./assets/sfx/step/new/${i}${Math.ceil(Math.random() * ranges[i].range)}.wav`, ranges[i].volume);
             }
@@ -298,6 +299,13 @@ addEventListener("keyup", (e) => {
             switchHotbor(i - 1)
         }
     }
+
+    if (e.key === "r") {
+        requestAnimationFrame(animate);
+        renderer.render(scene, camera);
+        var image = renderer.domElement.toDataURL("image/png").replace("image/png", "image/octet-stream");
+        window.location.href=image;
+    }
 });
 
 const cursortexture = textureLoader.load(`./assets/break.png`);
@@ -329,7 +337,7 @@ function animate() {
 
         camera.position.set(
             player.position.x,
-            player.position.y+.6,
+            player.position.y+.8,
             player.position.z
         )
 

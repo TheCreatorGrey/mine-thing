@@ -1,5 +1,5 @@
 export const blockIndex = [
-    { name:"air" },
+    { name:"air", nocollide:true},
     { name:"dirt", UV: [0, .9], transparent: false, sound: ['dirt'], strength:100 },
     { name:"grass", UV: [.1, .9], transparent: false, sound: ['grass'], strength:125 },
     { name:"stone", UV: [.2, .9], transparent: false, sound: ['stone'], strength:400 },
@@ -16,10 +16,10 @@ export const blockIndex = [
     { name:"snow", UV: [.3, .8], transparent: false, sound: ['dirt'], strength:125 },
     { name:"planks", UV: [.4, .8], transparent: false, sound: ['wood', 'stone'], strength:300 },
     { name:"sand", UV: [.5, .8], transparent: false, sound: ['dirt'], strength:125 },
-    { name:"water", UV: [.6, .8], transparent: true, sound: [], strength:100, unbreakable: true },
+    { name:"water", UV: [.6, .8], transparent: true, sound: [], strength:100, nocollide:true },
     { name:"cobble", UV: [.7, .8], transparent: false, sound: ['stone'], strength:300 },
     { name:"magma", UV: [.8, .8], transparent: false, sound: ['stone'], strength:300 },
-    { name:"lava", UV: [.9, .8], transparent: false, sound: ['stone'], strength:100 },
+    { name:"lava", UV: [.9, .8], transparent: false, sound: ['stone'], strength:100, nocollide:true },
     { name:"bloodstone", UV: [0, .7], transparent: false, sound: ['squish', 'stone'], strength:250 },
     { name:"bones 1", UV: [.1, .7], transparent: false, sound: ['squish', 'stone'], strength:250 },
     { name:"bones 2", UV: [.2, .7], transparent: false, sound: ['squish', 'stone'], strength:250 },
@@ -45,4 +45,5 @@ export function getIndexOf(name) {
 }
 
 export const transparentBlocks = [getIndexOf('air'), getIndexOf('leaves'), getIndexOf('glass'), getIndexOf('water'), getIndexOf('blood')];
-export const liquids = [getIndexOf('water'), getIndexOf('blood'), getIndexOf('air')]
+export const liquids = [getIndexOf('water'), getIndexOf('blood')];
+export const nonCollisionBlocks = [getIndexOf('water'), getIndexOf('blood'), getIndexOf('air'), 17, 0];

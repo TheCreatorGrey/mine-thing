@@ -73,14 +73,14 @@ export function chkAmbience(val) {
         let skycol;
 
         if (currentDimension === 'overworld') {
-            skycol = [189, 255, 254];
+            skycol = [150, 180, 254];
         } else if (currentDimension === 'cave') {
             skycol = [0, 0, 0]
         } else if (currentDimension === 'flesh pit') {
             skycol = [50, 0, 0]
         }
         
-        playNextTrack();
+        //playNextTrack();
         changeSkyColor(skycol[0], skycol[1], skycol[2]);
     }
 }

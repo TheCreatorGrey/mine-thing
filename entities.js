@@ -1,10 +1,9 @@
 import * as THREE from 'three';
 import { getBlock, renderedChunks, findEntityChunk } from './chunker.js';
-import { liquids } from './blockindex.js';
+import { blockIndex, liquids, nonCollisionBlocks } from './blockindex.js';
 import { paused } from './gui.js';
 
 export var worldEntities = [];
-var gravity = 1;
 
 let calcmesh = new THREE.Mesh();
 export function translate(axis="X", r) {
@@ -29,7 +28,7 @@ function cast(origin, direction, length) {
 }
 
 export class Entity {
-    constructor(obj, objOffset=[0, .6, 0], scale=[.6, 1.6, .6]) {
+    constructor(obj, objOffset=[0, .6, 0], scale=[.6, 1.8, .6]) {
         this.object = obj;
         this.scale = scale;
         this.objOffset = objOffset;
@@ -51,8 +50,6 @@ export class Entity {
             jumping:false
         }
 
-        this.v = new THREE.Vector3(0, 0, 0);
-
         this.id = worldEntities.length;
         worldEntities.push(this);
         this.onupdate = null;
@@ -65,8 +62,8 @@ export class Entity {
         //this.velocity.x = localZ.x;
         //this.velocity.z = localZ.z;
 
-        this.velocity.x += Math.round(localZ.x*10)
-        this.velocity.z += Math.round(localZ.z*10)
+        this.velocity.x += localZ.x
+        this.velocity.z += localZ.z
     }
 
     update(dt) {
@@ -89,31 +86,11 @@ export class Entity {
             if (this.attemptedVelocity.right) {
                 this.walk(-1, 0)
             }
-
-            console.log(this.velocity)
-        
-            //if (this.attemptedVelocity.running) {
-            //    this.velocity[`terminal_x`] = 8
-            //    this.velocity[`terminal_z`] = 8
-            //} else {
-            //    this.velocity[`terminal_x`] = 4
-            //    this.velocity[`terminal_z`] = 4
-            //}
-        
-        
-        
-            this.velocity.y -= gravity;
         
             for (let v of ['x', 'y', 'z']) {
-                if (this.velocity[v] > 0) {
-                    this.velocity[v]--
-                }
-    
-                if (this.velocity[v] < 0) {
-                    this.velocity[v]++
-                }
+                this.velocity[v] *= 1 - .1
 
-                this.object.position[v] += (this.velocity[v] * dt)/10;
+                this.object.position[v] += (this.velocity[v] * dt);
             }
 
             let checkpoints = [
@@ -121,6 +98,11 @@ export class Entity {
                 [-.5, -.5, -.5, 'y', -1],
                 [-.5, -.5, .5, 'y', -1],
                 [.5, -.5, -.5, 'y', -1],
+
+                [.5, .5, .5, 'y', 1],
+                [-.5, .5, -.5, 'y', 1],
+                [-.5, .5, .5, 'y', 1],
+                [.5, .5, -.5, 'y', 1],
 
                 [.5, -.5, .5, 'x', 1],
                 [-.5, -.5, .5, 'x', -1],
@@ -158,19 +140,19 @@ export class Entity {
                 }
 
                 let b = getBlock(x, y, z);
-                if (!(b === 0)) {
-
+                if (!blockIndex[b].nocollide) {
                     this.object.position[dir] = oldPos[dir]
                     this.velocity[dir] = 0
                 }
             }
         
             if (this.attemptedVelocity.jumping) {
-                if ((this.velocity.y == 0) && getBlock(this.object.position.x, this.object.position.y - 2, this.object.position.z)) {
-                    this.velocity.y = 2;
+                if ((this.velocity.y == 0) && getBlock(this.object.position.x, this.object.position.y - 1.6, this.object.position.z)) {
+                    this.velocity.y = 20;
                     //stepSound()
                 }
             }
+            this.velocity.y -= 1
     
             if (this.onupdate) {
                 this.onupdate()
