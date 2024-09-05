@@ -8,8 +8,9 @@ export var paused = true;
 const pauseMenu = document.getElementById("pauseMenu");
 
 //hand
-export let handMat = new THREE.MeshLambertMaterial({ color: 0xffd487 });
+export let handMat = new THREE.MeshBasicMaterial({ color: 0xffd487 });
 export let hand = new THREE.Mesh(new THREE.BoxGeometry(.25, .25, .5), handMat);
+console.log(hand.geometry.attributes.uv)
 hand.position.set(.6, -.5, -.8);
 hand.lookAt(new THREE.Vector3(.5, 0, -2))
 camera.add(hand);
@@ -38,6 +39,8 @@ export function reloadHotBar() {
     switchHotbor(hotbarSelectedIndex)
 }
 
+//0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0
+
 export function switchHotbor(index) {
     console.log(index)
     hotbarSelectedIndex = index;
@@ -61,30 +64,50 @@ export function switchHotbor(index) {
     } else {
         hand.scale.set(2, 2, 1);
         hand.material = blocktex;
-    
-        let g = hand.geometry;
-    
-        let newUvs = [0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0];
-        for (let i in newUvs) {
-            g.attributes.uv.array[i] = newUvs[i]
-        }
-    
-        let tog = "x";
-        for (let i in g.attributes.uv.array) {
-            g.attributes.uv.array[i] /= 10
-    
-            if (tog === 'x') {
-                g.attributes.uv.array[i] += blockIndex[selectedItem].UV[0];
-    
-                tog = 'y'
-            } else {
-                g.attributes.uv.array[i] += blockIndex[selectedItem].UV[1];
-    
-                tog = 'x'
+
+
+
+        let newUvs = [];
+
+        let faceUVs = [
+            [0, 1],
+            [1, 1],
+            [0, 0],
+            [1, 0]
+        ]
+
+        for (let i = 0; i < 6; i++) {
+            for (let f in faceUVs) {
+                let u = faceUVs[f][0];
+                let v = faceUVs[f][1];
+
+                let verticalUnit = 1/32;
+                let horizontalUnit = 1/6;
+
+                u /= 6;
+                v /= 32;
+                v += 1-verticalUnit;
+
+                v -= verticalUnit*blockIndex[selectedItem].UV
+
+                newUvs.push(...[u, v])
             }
         }
-    
-        g.attributes.uv.needsUpdate = true;
+
+
+        hand.geometry.setAttribute('uv',
+            new THREE.BufferAttribute(
+                new Float32Array(newUvs),
+                2
+            )
+        );
+
+        hand.geometry.setAttribute('color',
+            new THREE.BufferAttribute(
+                new Float32Array(Array(3*4*6).fill(.3)),
+                3
+            )
+        );
     }
 }
 

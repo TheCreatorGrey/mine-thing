@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { getBlock, renderedChunks, findEntityChunk } from './chunker.js';
-import { blockIndex, liquids, nonCollisionBlocks } from './blockindex.js';
+import { blockIndex } from './blockindex.js';
 import { paused } from './gui.js';
 
 export var worldEntities = [];
@@ -37,7 +37,7 @@ export class Entity {
             x: 0,
             y: 0,
             z: 0,
-            airResistance: 10,
+            airResistance: 5,
             walk_force: 4
         }
 
@@ -68,12 +68,6 @@ export class Entity {
 
     update(dt) {
         if (findEntityChunk(this.object.position.x, this.object.position.y, this.object.position.z)) {
-            let oldPos = {
-                x: this.object.position.x,
-                y: this.object.position.y,
-                z: this.object.position.z,
-            }
-        
             if (this.attemptedVelocity.for) {
                 this.walk(0, 1)
             }
@@ -93,58 +87,103 @@ export class Entity {
                 this.object.position[v] += (this.velocity[v] * dt);
             }
 
-            let checkpoints = [
-                [.5, -.5, .5, 'y', -1],
-                [-.5, -.5, -.5, 'y', -1],
-                [-.5, -.5, .5, 'y', -1],
-                [.5, -.5, -.5, 'y', -1],
-
-                [.5, .5, .5, 'y', 1],
-                [-.5, .5, -.5, 'y', 1],
-                [-.5, .5, .5, 'y', 1],
-                [.5, .5, -.5, 'y', 1],
-
-                [.5, -.5, .5, 'x', 1],
-                [-.5, -.5, .5, 'x', -1],
-                [.5, -.5, -.5, 'x', 1],
-                [-.5, -.5, -.5, 'x', -1],
-
-                [.5, .5, .5, 'x', 1],
-                [-.5, .5, .5, 'x', -1],
-                [.5, .5, -.5, 'x', 1],
-                [-.5, .5, -.5, 'x', -1],
-
-
-                [.5, -.5, .5, 'z', 1],
-                [.5, -.5, -.5, 'z', 1],
-                [-.5, -.5, .5, 'z', -1],
-                [-.5, -.5, -.5, 'z', -1],
-
-                [.5, .5, .5, 'z', 1],
-                [.5, .5, -.5, 'z', 1],
-                [-.5, .5, .5, 'z', -1],
-                [-.5, .5, -.5, 'z', -1]
+            
+            let checks = [
+                [0, -1, 0],
+                [0, 1, 0],
+                [0, 0, 1],
+                [0, 0, -1],
+                [1, 0, 0],
+                [-1, 0, 0]
             ]
 
-            for (let c of checkpoints) {
-                let x = (c[0]*this.scale[0])+this.object.position.x;
-                let y = (c[1]*this.scale[1])+this.object.position.y;
-                let z = (c[2]*this.scale[2])+this.object.position.z;
-                let dir = c[3];
-                let norm = c[4];
+            for (let c of checks) {
+                let block_pos = [
+                    Math.round(this.object.position.x+(c[0]*(this.scale[0]/2))),
+                    Math.round(this.object.position.y+(c[1]*(this.scale[1]/2))),
+                    Math.round(this.object.position.z+(c[2]*(this.scale[2]/2)))
+                ]
+    
+                let block = getBlock(
+                    block_pos[0], 
+                    block_pos[1], 
+                    block_pos[2]
+                );
+                if (!blockIndex[block].nocollide) {
+                    let block_min = [
+                        block_pos[0] - .5,
+                        block_pos[1] - .5,
+                        block_pos[2] - .5
+                    ]
+                
+                    let block_max = [
+                        block_pos[0] + .5,
+                        block_pos[1] + .5,
+                        block_pos[2] + .5
+                    ]
+    
+    
+                    let plyr_min = [
+                        this.object.position.x - (this.scale[0]/2),
+                        this.object.position.y - (this.scale[1]/2),
+                        this.object.position.z - (this.scale[2]/2)
+                    ]
+                
+                    let plyr_max = [
+                        this.object.position.x + (this.scale[0]/2),
+                        this.object.position.y + (this.scale[1]/2),
+                        this.object.position.z + (this.scale[2]/2)
+                    ]
+    
+    
+                    let overlap = [
+                        Math.min(plyr_max[0], block_max[0]) - Math.max(plyr_min[0], block_min[0]),
+                        Math.min(plyr_max[1], block_max[1]) - Math.max(plyr_min[1], block_min[1]),
+                        Math.min(plyr_max[2], block_max[2]) - Math.max(plyr_min[2], block_min[2])
+                    ]
+                    let smallest = Math.min(...overlap)
+                    let index = overlap.indexOf(smallest)
+    
+    
+                    if (plyr_min[index] > block_min[index]) {
+                        if (smallest > 0) {
+                            if (index === 0) {
+                                this.object.position.x += smallest
+                                this.velocity.x = 0
+                            }
+                            if (index === 1) {
+                                this.object.position.y += smallest
+                                this.velocity.y = 0
+                            }
+                            if (index === 2) {
+                                this.object.position.z += smallest
+                                this.velocity.z = 0
+                            }
+                        }
+                    }
 
-                let difference = {
-                    'x':x-Math.round(x),
-                    'y':y-Math.round(y),
-                    'z':z-Math.round(z)
-                }
-
-                let b = getBlock(x, y, z);
-                if (!blockIndex[b].nocollide) {
-                    this.object.position[dir] = oldPos[dir]
-                    this.velocity[dir] = 0
+                    if (plyr_min[index] < block_min[index]) {
+                        if (smallest > 0) {
+                            if (index === 0) {
+                                this.object.position.x -= smallest
+                                this.velocity.x = 0
+                            }
+                            if (index === 1) {
+                                this.object.position.y -= smallest
+                                this.velocity.y = 0
+                            }
+                            if (index === 2) {
+                                this.object.position.z -= smallest
+                                this.velocity.z = 0
+                            }
+                        }
+                    }
+    
                 }
             }
+
+
+
         
             if (this.attemptedVelocity.jumping) {
                 if ((this.velocity.y == 0) && getBlock(this.object.position.x, this.object.position.y - 1.6, this.object.position.z)) {
@@ -152,7 +191,7 @@ export class Entity {
                     //stepSound()
                 }
             }
-            this.velocity.y -= 1
+            this.velocity.y -= 2
     
             if (this.onupdate) {
                 this.onupdate()

@@ -33,24 +33,9 @@ export async function playNextTrack() {
 }
 
 
-let sun = new THREE.DirectionalLight(0xffffff);
-sun.position.set(400, 400, 400);
-let soft = new THREE.DirectionalLight(0x939393);
-soft.position.set(-400, 400, -400);
-let neath = new THREE.DirectionalLight(0x5f5f5f);
-neath.position.set(0, -400, 0);
-scene.add(sun);
-scene.add(soft);
-scene.add(neath);
-
-
 function changeSkyColor(r, g, b) {
     document.body.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
     scene.fog.color = new THREE.Color(`rgb(${r}, ${g}, ${b})`);
-
-    sun.color = new THREE.Color(`rgb(${r+100}, ${g+100}, ${b+100})`);
-    soft.color = new THREE.Color(`rgb(${r+50}, ${g+50}, ${b+50})`);
-    neath.color = new THREE.Color(`rgb(${r}, ${g}, ${b})`);
 }
 
 

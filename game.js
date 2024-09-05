@@ -1,20 +1,21 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { blockIndex } from './blockindex.js';
-import { Entity, worldEntities, translate } from './entities.js';
-import { getBlock, putBlock, defaultChunkSize, blocktex, texture, chunkLoader, renderedChunks, renderDistX, generatedChunks, setChunks } from './chunker.js';
+import { Entity, worldEntities } from './entities.js';
+import { getBlock, putBlock, chunkLoader, chunkGenerator, generatedChunks, setChunks } from './chunker.js';
 import { playSound, fractalNoise, textureLoader, calculateDistance, download } from './utils.js';
 import { scene, camera, clock, renderer } from './scn.js';
 import { chkAmbience } from './ambience.js';
 import { switchHotbor, paused, selectedItem, hotbarSelectedIndex, handMat, inventory, reloadHotBar, setInventory } from './gui.js';
-import { FirstPersonControls } from 'three/addons/controls/FirstPersonControls.js';
+import { Stats } from './stats.js';
 
+const stats = new Stats();
+stats.showPanel(0);
+document.body.appendChild(stats.dom);
 
 let spawnPos = new THREE.Vector3(0, 0, 0);
 let ls_save = localStorage.getItem("VXLS_save");
 if (ls_save) {
     ls_save = JSON.parse(ls_save)
-    console.log(ls_save.world.chunks)
 
     setChunks(ls_save.world.chunks);
 
@@ -131,7 +132,47 @@ function camCast() {
     camera.getWorldDirection(direction);
     raycaster.set(camera.position, direction);
 
-    return raycaster.intersectObjects(Object.values(renderedChunks));
+    return raycaster.intersectObjects(scene.children);
+}
+
+function blockCast(precision=.01) {
+    let direction = new THREE.Vector3();
+    camera.getWorldDirection(direction);
+    direction.x *= precision;
+    direction.y *= precision;
+    direction.z *= precision;
+
+    let cast = new THREE.Vector3();
+    cast.copy(camera.position);
+    let limit = 1000;
+
+    let target;
+    let iteration = 0;
+    while (!target) {
+        iteration += 1
+
+        if (iteration > limit) {
+            break
+        }
+
+        cast.x += direction.x;
+        cast.y += direction.y;
+        cast.z += direction.z;
+
+        let block = getBlock(cast.x, cast.y, cast.z);
+        if (block !== 0) {
+            target = block
+        }
+    }
+
+    if (target) {
+        return [
+            target,
+            Math.round(cast.x),
+            Math.round(cast.y),
+            Math.round(cast.z)
+        ];
+    }
 }
 
 renderer.domElement.onmousedown = function (e) {
@@ -195,11 +236,7 @@ class itemDrop {
     }
 }
 
-let oldCamX;
-let oldCamY;
-let oldCamZ;
 
-chunkLoader();
 let stepTimeout = 1;
 async function stepSound(loop = false, entity) {
     let speed = (Math.abs(entity.velocity.x + entity.velocity.z) * 10) + 500;
@@ -212,7 +249,7 @@ async function stepSound(loop = false, entity) {
 
     let ground = getBlock(
         entity.object.position.x,
-        entity.object.position.y - 2,
+        entity.object.position.y - 1,
         entity.object.position.z
     )
 
@@ -224,8 +261,6 @@ async function stepSound(loop = false, entity) {
             'wood': {range:3, volume:1},
             'squish': {range:4, volume:1}
         }
-
-        console.log(entity.velocity.z)
 
         if (entity.attemptedVelocity.for || entity.attemptedVelocity.back || entity.attemptedVelocity.left || entity.attemptedVelocity.right) {
             for (let i of blockIndex[ground].sound) { //for sound combos
@@ -325,6 +360,7 @@ var lastCursPos;
 var hoveredBlock;
 
 function animate() {
+    stats.update();
     dt = clock.getDelta();
     requestAnimationFrame(animate);
 
@@ -347,48 +383,41 @@ function animate() {
             camera.rotation.z
         )
     
-        let cursCast = camCast();
-        if (cursCast.length > 0) {
-            var point = cursCast[0].point;
-            const normal = cursCast[0].face.normal;
-            const hit = cursCast[0].object;
-    
-            point.x -= normal.x * .5;
-            point.y -= normal.y * .5;
-            point.z -= normal.z * .5;
-    
+        let cursCast = blockCast();
+        if (cursCast) {
             cursor.position.set(
-                Math.round(point.x),
-                Math.round(point.y),
-                Math.round(point.z),
+                cursCast[1],
+                cursCast[2],
+                cursCast[3]
             );
-        }
-        
-        hoveredBlock = getBlock(cursor.position.x, cursor.position.y, cursor.position.z);
-        breakTicks = blockIndex[hoveredBlock].strength;
-        cursortexture.offset.set(0, (Math.round((breakProgress/breakTicks)*10)/10)-.1);
-        
-        if (pressedKeys.mouseLeft) {
-            breakProgress -= 100*dt;
 
-            if (lastCursPos !== `${cursor.position.x}/${cursor.position.y}/${cursor.position.z}`) {
+            let hoveredBlock = cursCast[0];
+            breakTicks = blockIndex[hoveredBlock].strength;
+            cursortexture.offset.set(0, (Math.round((breakProgress/breakTicks)*10)/10)-.1);
+            
+            if (pressedKeys.mouseLeft) {
+                breakProgress -= 100*dt;
+    
+                if (lastCursPos !== `${cursor.position.x}/${cursor.position.y}/${cursor.position.z}`) {
+                    breakProgress = breakTicks
+                }
+        
+                if (breakProgress < 0) {
+                    breakProgress = breakTicks;
+                    putBlock(Math.round(cursor.position.x), Math.round(cursor.position.y), Math.round(cursor.position.z), 0, true);
+                    //new itemDrop(cursor.position.x, cursor.position.y, cursor.position.z);
+                    playSound('./assets/sfx/destroy.ogg');
+        
+                    inventory[hotbarSelectedIndex] = hoveredBlock;
+                    reloadHotBar()
+                }
+    
+                lastCursPos = `${cursor.position.x}/${cursor.position.y}/${cursor.position.z}` // stupid as hell but at least it works
+            } else {
                 breakProgress = breakTicks
             }
-    
-            if (breakProgress < 0) {
-                breakProgress = breakTicks;
-                putBlock(Math.round(cursor.position.x), Math.round(cursor.position.y), Math.round(cursor.position.z), 0, true);
-                //new itemDrop(cursor.position.x, cursor.position.y, cursor.position.z);
-                playSound('./assets/sfx/destroy.ogg');
-    
-                inventory[hotbarSelectedIndex] = hoveredBlock;
-                reloadHotBar()
-            }
-
-            lastCursPos = `${cursor.position.x}/${cursor.position.y}/${cursor.position.z}` // stupid as hell but at least it works
-        } else {
-            breakProgress = breakTicks
         }
+
     
         if (pressedKeys["w"]) {
             playerPhys.attemptedVelocity.for = true

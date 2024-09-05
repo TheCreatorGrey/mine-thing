@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draw Circle on Canvas</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        canvas {
+            border: 1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="myCanvas" width="1000" height="800"></canvas>
+
+    <script>
+        // Get the canvas element
+        const canvas = document.getElementById('myCanvas');
+        const context = canvas.getContext('2d');
+
+        function drawCircle(x, y) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = 5;
+
+            context.beginPath();
+            context.arc(x, y, radius, 0, 2 * Math.PI, false);
+            context.fillStyle = 'blue';  // Set the fill color
+            context.fill();
+            context.lineWidth = 5;       // Set the border width
+            context.strokeStyle = 'black'; // Set the border color
+            context.stroke();
+        }
+
+        position = {
+            "x":-6,
+            "y":6
+        }
+
+        velocity = {
+            "x":0,
+            "y":.1
+        }
+
+        function update() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            context.beginPath();
+            context.rect(0, 800-(60*4), 800, 60*4);
+            context.stroke();
+            
+            velocity.y -= .01
+            intersectsBlock = (position.y < 4)
+
+            for (let v of ["x", "y"]) {
+                position[v] += velocity[v]
+
+                x = position.x
+                y = position.y
+
+                let difference = {
+                    'x':(Math.round(x)-x),
+                    'y':(Math.round(y)-y)
+                }
+
+                if (intersectsBlock) {
+                    position[v] -= (difference[v])
+                    velocity[v] = 0
+                }
+            }
+
+            drawCircle(
+                (position.x*60)*-1, 
+                ((position.y*60)*-1)+800
+            )
+        }
+
+        setInterval(update, 1)
+    </script>
+</body>
+</html>

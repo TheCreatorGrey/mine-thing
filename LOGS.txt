@@ -36,3 +36,11 @@ added block types, ambience, more music
 and the "flesh pit", which is found 400 blocks
 below the surface. Also, bug fixes and other
 small improvements.
+
+update 7:
+Improved entity collision
+Improved chunk loading speed
+Six sided blocks
+Block models
+Internal code improvement
+Improved chunk loading order
